@@ -45,6 +45,26 @@ try {
     
     $invoice_id = $pdo->lastInsertId();
     
+    // Save PDF to server if provided
+    if (isset($data['pdf_base64']) && !empty($data['pdf_base64'])) {
+        $bills_directory = "C:\\Users\\sadik\\OneDrive\\Desktop\\invoice-main\\BILLS";
+        
+        // Create directory if it doesn't exist
+        if (!is_dir($bills_directory)) {
+            mkdir($bills_directory, 0777, true);
+        }
+        
+        $customer_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', $data['customer_name']);
+        $pdf_filename = "{$data['invoice_no']}_{$customer_name}.pdf";
+        $pdf_path = $bills_directory . DIRECTORY_SEPARATOR . $pdf_filename;
+        
+        // Decode and save PDF
+        $pdf_content = base64_decode($data['pdf_base64']);
+        if (file_put_contents($pdf_path, $pdf_content) === false) {
+            throw new Exception("Failed to save PDF to: " . $pdf_path);
+        }
+    }
+    
     // Insert invoice items with invoice_id, invoice_no and serial number (s_no)
     $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_id, invoice_no, s_no, item_name, gst_rate, quantity, rate, amount, cgst, sgst, igst, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
