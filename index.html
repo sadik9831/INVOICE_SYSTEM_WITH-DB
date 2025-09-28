@@ -481,10 +481,34 @@
   .pdf-exporting span[class*="edit"],
   .pdf-exporting .pencil-icon,
   .pdf-exporting *[class*="edit"],
-  .pdf-exporting button {
+  .pdf-exporting button,
+  .pdf-exporting select,
+  .pdf-exporting #customer-dropdown,
+  .pdf-exporting .loading,
+  .pdf-exporting label,
+  .pdf-exporting #customer-name,
+  .pdf-exporting #date-actions,
+  .pdf-exporting .action-buttons {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
+  }
+
+  .pdf-exporting input {
+    border: none !important;
+    background: transparent !important;
+    font-size: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .pdf-exporting .boxed-section {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
   }
   
   .pdf-exporting input[type="date"] {
@@ -547,16 +571,44 @@
     <div class="boxed-section">
       <h3>Billed To</h3>
       <div style="line-height: 1.4;">
-        <p style="margin: 0;">
-          <input type="text" id="customer-name" placeholder="Customer Name" style="width: 100%; font-weight: bold; font-size: 1.0em;">
+        <p style="margin: 0; position: relative;">
+          <label for="customer-dropdown" style="display: block; font-weight: bold; margin-bottom: 5px;">Customer Name:</label>
+          <select id="customer-dropdown" onchange="selectCustomer()" style="width: 100%; font-weight: bold; font-size: 1.0em; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+            <option value="">-- Select Customer --</option>
+            <option value="new">+ Add New Customer</option>
+          </select>
+          <input type="text" id="customer-name" placeholder="Enter new customer name" style="width: 100%; font-weight: bold; font-size: 1.0em; display: none; margin-top: 5px;">
+          <div id="customer-loading" class="loading" style="display: none; margin-top: 5px;">Loading customers...</div>
         </p>
-        <p style="margin: 0;"><input type="text" id="customer-address1" placeholder="Address Line 1" style="width: 100%;"></p>
-        <p style="margin: 0;"><input type="text" id="customer-address2" placeholder="Address Line 2" style="width: 100%;"></p>
-        <p style="margin: 0;"><input type="text" id="customer-address3" placeholder="Address Line 3" style="width: 100%;"></p>
+        
         <p style="margin: 0;">
-          <strong>GSTIN:</strong>
+          <label for="customer-address1" style="display: block; font-weight: bold; margin-bottom: 2px;">Address Line 1:</label>
+          <input type="text" id="customer-address1" placeholder="Address Line 1" style="width: 100%;">
+        </p>
+        
+        <p style="margin: 0;">
+          <label for="customer-address2" style="display: block; font-weight: bold; margin-bottom: 2px;">Address Line 2:</label>
+          <input type="text" id="customer-address2" placeholder="Address Line 2" style="width: 100%;">
+        </p>
+        
+        <p style="margin: 0;">
+          <label for="customer-address3" style="display: block; font-weight: bold; margin-bottom: 2px;">Address Line 3:</label>
+          <input type="text" id="customer-address3" placeholder="Address Line 3" style="width: 100%;">
+        </p>
+        
+        <p style="margin: 0;">
+          <label for="customer-gstin" style="display: block; font-weight: bold; margin-bottom: 2px;">GSTIN:</label>
           <input type="text" id="customer-gstin" placeholder="GSTIN" style="width: 80%; font-weight: bold;">
         </p>
+        
+        <div style="margin-top: 10px;">
+          <button onclick="saveCurrentCustomer()" style="background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">
+            Save Customer
+          </button>
+          <button onclick="refreshCustomers()" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 5px;">
+            Refresh List
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -964,8 +1016,17 @@ function recalculate(changedInput) {
 function generatePDF() {
   const invoiceBox = document.getElementById('invoice');
   
+  // Store current document state
+  const originalState = {
+    html: invoiceBox.innerHTML,
+    className: invoiceBox.className
+  };
+  
   // Add PDF exporting class to hide edit buttons
   invoiceBox.classList.add('pdf-exporting');
+  
+  // Store current input values
+  const currentInputs = {};
 
   const invoiceNo = document.getElementById('invoice-no').value;
   const invoiceDate = document.getElementById('invoice-date').value; // yyyy-mm-dd for database
@@ -1212,6 +1273,191 @@ function numberToWords(num) {
   if (!words) words = "Zero Rupees";
   return words + " Only";
 }
+
+// Add API_BASE_URL constant
+// Customer management
+let customers = [];
+
+// Load customers when page loads
+async function loadCustomers() {
+  const customerLoading = document.getElementById('customer-loading');
+  const customerDropdown = document.getElementById('customer-dropdown');
+  
+  try {
+    customerLoading.style.display = 'block';
+    
+    const response = await fetch(`${API_BASE_URL}/customers.php?action=get_all`);
+    const data = await response.json();
+    
+    if (data.success) {
+      customers = data.customers;
+      
+      // Clear existing options except default ones
+      customerDropdown.innerHTML = `
+        <option value="">-- Select Customer --</option>
+        <option value="new">+ Add New Customer</option>
+      `;
+      
+      // Add customers to dropdown
+      customers.forEach(customer => {
+        const option = document.createElement('option');
+        option.value = customer.customer_name;
+        option.textContent = customer.customer_name;
+        customerDropdown.appendChild(option);
+      });
+      
+      customerLoading.style.display = 'none';
+    } else {
+      throw new Error(data.error || 'Failed to load customers');
+    }
+  } catch (error) {
+    console.error('Error loading customers:', error);
+    customerLoading.textContent = 'Error loading customers';
+    customerLoading.className = 'error';
+    
+    setTimeout(() => {
+      customerLoading.style.display = 'none';
+    }, 3000);
+  }
+}
+
+// Handle customer selection
+function selectCustomer() {
+  const dropdown = document.getElementById('customer-dropdown');
+  const nameInput = document.getElementById('customer-name');
+  const selectedValue = dropdown.value;
+  
+  if (selectedValue === 'new') {
+    // Show name input for new customer
+    nameInput.style.display = 'block';
+    nameInput.focus();
+    clearCustomerFields();
+  } else if (selectedValue === '') {
+    // No selection
+    nameInput.style.display = 'none';
+    clearCustomerFields();
+  } else {
+    // Existing customer selected
+    nameInput.style.display = 'none';
+    fillCustomerData(selectedValue);
+  }
+}
+
+// Fill customer data from selection
+function fillCustomerData(customerName) {
+  const customer = customers.find(c => c.customer_name === customerName);
+  
+  if (customer) {
+    document.getElementById('customer-address1').value = customer.address_line1 || '';
+    document.getElementById('customer-address2').value = customer.address_line2 || '';
+    document.getElementById('customer-address3').value = customer.address_line3 || '';
+    document.getElementById('customer-gstin').value = customer.gstin || '';
+    
+    // Trigger recalculation for tax changes
+    recalculate();
+    updateTaxColumns();
+  }
+}
+
+// Clear customer fields
+function clearCustomerFields() {
+  document.getElementById('customer-address1').value = '';
+  document.getElementById('customer-address2').value = '';
+  document.getElementById('customer-address3').value = '';
+  document.getElementById('customer-gstin').value = '';
+  
+  // Trigger recalculation
+  recalculate();
+  updateTaxColumns();
+}
+
+// Save current customer data
+async function saveCurrentCustomer() {
+  const dropdown = document.getElementById('customer-dropdown');
+  const nameInput = document.getElementById('customer-name');
+  
+  let customerName;
+  if (dropdown.value === 'new') {
+    customerName = nameInput.value.trim();
+  } else if (dropdown.value) {
+    customerName = dropdown.value;
+  } else {
+    alert('Please select or enter a customer name');
+    return;
+  }
+  
+  if (!customerName) {
+    alert('Please enter a customer name');
+    return;
+  }
+  
+  const customerData = {
+    customer_name: customerName,
+    address_line1: document.getElementById('customer-address1').value,
+    address_line2: document.getElementById('customer-address2').value,
+    address_line3: document.getElementById('customer-address3').value,
+    gstin: document.getElementById('customer-gstin').value
+  };
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/customers.php?action=add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(customerData)
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      alert('Customer saved successfully!');
+      await refreshCustomers();
+      
+      // Select the saved customer
+      dropdown.value = customerName;
+      nameInput.style.display = 'none';
+    } else {
+      throw new Error(data.error || 'Failed to save customer');
+    }
+  } catch (error) {
+    console.error('Error saving customer:', error);
+    alert('Error saving customer: ' + error.message);
+  }
+}
+
+// Refresh customer list
+async function refreshCustomers() {
+  await loadCustomers();
+}
+
+// Initialize when page loads
+window.onload = async function() {
+  try {
+    // Load initial data in the correct order
+    await fetchInvoiceData(); // This was missing!
+    await loadCustomers();
+    updateTaxColumns();
+
+    // Add event listeners
+    document.getElementById('customer-gstin').addEventListener('input', function() {
+      recalculate();
+      updateTaxColumns();
+    });
+
+    document.getElementById('customer-name').addEventListener('blur', function() {
+      if (this.value.trim()) {
+        // Auto-fill the current customer data when typing new name
+      }
+    });
+
+    // Add one default item row
+    addItem();
+
+  } catch (error) {
+    console.error('Error during initialization:', error);
+  }
+};
 </script>
 </body>
 </html>
