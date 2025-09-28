@@ -476,7 +476,25 @@
   }
 
   .pdf-exporting .edit-icon,
-  .pdf-exporting .date-actions {
+  .pdf-exporting .date-actions,
+  .pdf-exporting .edit-button,
+  .pdf-exporting span[class*="edit"],
+  .pdf-exporting .pencil-icon,
+  .pdf-exporting *[class*="edit"],
+  .pdf-exporting button {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+  
+  .pdf-exporting input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    border: none;
+    background: transparent;
+  }
+
+  .pdf-exporting input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
   }
   </style>
@@ -501,7 +519,7 @@
     <div class="date-input-wrapper">
       <div id="invoice-date-display" class="date-display" onclick="enableDateEdit()">
         <span id="date-text"></span>
-        <span class="edit-icon">✏️</span>
+        <span class="edit-icon pdf-hide">✏️</span>
       </div>
       <input type="date" id="invoice-date" class="date-input" onblur="handleDateBlur()" onkeydown="handleDateKeydown(event)">
     </div>
@@ -945,6 +963,8 @@ function recalculate(changedInput) {
 
 function generatePDF() {
   const invoiceBox = document.getElementById('invoice');
+  
+  // Add PDF exporting class to hide edit buttons
   invoiceBox.classList.add('pdf-exporting');
 
   const invoiceNo = document.getElementById('invoice-no').value;
@@ -970,6 +990,33 @@ function generatePDF() {
 
   // Use the display date format for filename (already in dd-mm-yyyy format)
   const fileName = `${invoiceNo}_${customerName}.pdf`;
+
+  // Configure PDF options
+  const pdfOptions = {
+    margin: [0, 0],
+    filename: fileName,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2,
+      scrollY: 0,
+      windowWidth: document.documentElement.clientWidth
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  // Hide all edit icons before generating PDF
+  const editIcons = invoiceBox.querySelectorAll('.edit-icon, .date-actions, button, [class*="edit"]');
+  editIcons.forEach(icon => icon.style.display = 'none');
+
+  // Generate PDF
+  html2pdf().set(pdfOptions).from(invoiceBox).save().then(() => {
+    // Restore the interface after PDF generation
+    invoiceBox.classList.remove('pdf-exporting');
+    gstinInput.style.display = '';
+    gstinSpan.remove();
+    // Restore edit icons
+    editIcons.forEach(icon => icon.style.display = '');
+  });
 
   const opt = {
     margin: 0,

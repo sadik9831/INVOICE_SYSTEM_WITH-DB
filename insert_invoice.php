@@ -31,6 +31,7 @@ if (!$data) {
 try {
     $pdo->beginTransaction();
     
+    // Insert into invoices table
     $stmt = $pdo->prepare("INSERT INTO invoices (invoice_no, invoice_date, customer_name, customer_gstin, amount_before_tax, total_tax, total_after_tax) VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
         $data['invoice_no'],
@@ -44,11 +45,15 @@ try {
     
     $invoice_id = $pdo->lastInsertId();
     
-    $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_id, item_name, gst_rate, quantity, rate, amount, cgst, sgst, igst, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Insert invoice items with invoice_id, invoice_no and serial number (s_no)
+    $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_id, invoice_no, s_no, item_name, gst_rate, quantity, rate, amount, cgst, sgst, igst, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
+    $s_no = 1; // Initialize serial number
     foreach ($data['items'] as $item) {
         $stmt_item->execute([
-            $invoice_id,
+            $invoice_id,              // Invoice ID (foreign key)
+            $data['invoice_no'],      // Invoice number
+            $s_no,                    // Serial number
             $item['name'],
             $item['gst_rate'],
             $item['qty'],
@@ -59,10 +64,11 @@ try {
             $item['igst'],
             $item['total']
         ]);
+        $s_no++; // Increment serial number for next item
     }
     
     $pdo->commit();
-    echo json_encode(["success" => true, "invoice_id" => $invoice_id]);
+    echo json_encode(["success" => true, "invoice_id" => $invoice_id, "invoice_no" => $data['invoice_no']]);
     
 } catch (PDOException $e) {
     $pdo->rollback();
