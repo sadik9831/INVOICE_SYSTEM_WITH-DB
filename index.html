@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GST Invoice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #fff;
+  }
+
+  .invoice-box {
+    max-width: 900px;
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #eee;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    color: #333;
+    padding-bottom: 60px;
+    background: #fff;
+  }
+
+  h1.center {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #222;
+    background: #fff;
+  }
+
+  .flex-space {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+  .boxed-section {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+  }
+
+  .section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+
+  .col {
+    width: 100%;
+    max-width: 48%;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+
+  /* Dynamic table layout with flexible columns */
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background: #fff;
+    table-layout: fixed; /* Enable fixed layout for better control */
+    font-size: 0.8em; /* Reduce text size by 20% */
+  }
+
+  .invoice-table th, .invoice-table td {
+    border: 1px solid #bbb;
+    padding: 6px; /* Reduced padding to compensate for smaller text */
+    text-align: center;
+    vertical-align: middle;
+    background: #fff;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-size: inherit; /* Inherit the reduced font size */
+  }
+
+  .invoice-table th {
+    background-color: #fff !important;
+    font-weight: bold;
+  }
+
+  /* Column width specifications - Optimized without extra space */
+  .invoice-table th:nth-child(1),  /* S.No */
+  .invoice-table td:nth-child(1) {
+    width: 4%;
+    min-width: 35px;
+  }
+
+  .invoice-table th:nth-child(2),  /* Item - Center aligned header */
+  .invoice-table td:nth-child(2) {
+    width: 30%;
+    min-width: 120px;
+  }
+
+  .invoice-table th:nth-child(3),  /* GST Rate */
+  .invoice-table td:nth-child(3) {
+    width: 5%;
+    min-width: 40px;
+  }
+
+  .invoice-table th:nth-child(4),  /* Qty */
+  .invoice-table td:nth-child(4) {
+    width: 5%;
+    min-width: 40px;
+  }
+
+  .invoice-table th:nth-child(5),  /* Rate */
+  .invoice-table td:nth-child(5) {
+    width: 7%;
+    min-width: 50px;
+  }
+
+  .invoice-table th:nth-child(6),  /* Amount */
+  .invoice-table td:nth-child(6) {
+    width: 9%;
+    min-width: 60px;
+  }
+
+  .invoice-table th:nth-child(7),  /* CGST */
+  .invoice-table td:nth-child(7),
+  .invoice-table th:nth-child(8),  /* SGST */
+  .invoice-table td:nth-child(8),
+  .invoice-table th:nth-child(9),  /* IGST */
+  .invoice-table td:nth-child(9) {
+    width: 8%;
+    min-width: 55px;
+  }
+
+  .invoice-table th:nth-child(10), /* Total */
+  .invoice-table td:nth-child(10) {
+    width: 7%;
+    min-width: 60px;
+  }
+
+  /* Input field styling within table cells */
+  .invoice-table input[type="text"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 3px; /* Reduced padding for smaller text */
+    font-size: inherit;
+    text-align: inherit;
+    box-sizing: border-box;
+  }
+
+  .invoice-table input[type="number"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 3px; /* Reduced padding for smaller text */
+    font-size: inherit;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  /* Specific input sizing for narrow columns */
+  .invoice-table td:nth-child(4) input,  /* Qty input */
+  .invoice-table td:nth-child(5) input {  /* Rate input */
+    padding: 2px;
+    font-size: 0.9em; /* Slightly smaller for these narrow columns */
+  }
+
+  /* Item column input - center aligned like header */
+  .invoice-table td:nth-child(2) input {
+    text-align: center;
+    padding: 3px;
+  }
+
+  .tax-summary table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+
+  .tax-summary th, .tax-summary td {
+    border: 1px solid #bbb;
+    padding: 8px;
+    text-align: left;
+    background: #fff;
+  }
+
+  .totals p {
+    margin: 5px 0;
+    background: #fff;
+  }
+
+  .tax-summary h4 {
+    margin-bottom: 10px;
+    color: #444;
+    background: #fff;
+  }
+
+  .footer {
+    margin-top: 30px;
+    font-style: italic;
+    font-size: 0.9em;
+    color: #666;
+    background: #fff;
+  }
+
+  .actions {
+    text-align: center;
+    margin-bottom: 30px;
+    background: #fff;
+  }
+
+  .actions button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #004aad;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+
+  .actions button:hover {
+    background-color: #003a8c;
+  }
+
+  input[type="text"], input[type="number"], input[type="date"] {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  /* Bank details table */
+  .bank-details,
+  .bank-details table,
+  .bank-details th,
+  .bank-details td {
+    background: #fff !important;
+  }
+
+  /* Remove any gray backgrounds from summary tables */
+  [style*="background:#f7f7f7"] {
+    background: #fff !important;
+  }
+
+  .flex-space > div input {
+    margin-top: 4px;
+  }
+
+  /* Loading indicator styles */
+  .loading {
+    color: #666;
+    font-style: italic;
+  }
+
+  .error {
+    color: #d32f2f;
+    font-weight: bold;
+  }
+
+  .success {
+    color: #2e7d32;
+    font-weight: bold;
+  }
+
+  /* Date editing styles */
+  .date-container {
+    position: relative;
+  }
+
+  .date-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .date-display {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    min-height: 20px;
+    min-width: 120px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .date-display:hover {
+    background-color: #f8f9fa;
+    border-color: #999;
+  }
+
+  .edit-icon {
+    margin-left: 5px;
+    color: #666;
+    font-size: 12px;
+  }
+
+  .date-input {
+    display: none;
+  }
+
+  .date-input.active {
+    display: inline-block;
+  }
+
+  .date-display.hidden {
+    display: none !important;
+  }
+
+  .date-actions {
+    display: none;
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .date-actions.active {
+    display: flex;
+  }
+
+  .date-btn {
+    padding: 2px 8px;
+    font-size: 12px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .date-btn.save {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .date-btn.cancel {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .date-btn:hover {
+    opacity: 0.8;
+  }
+
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .invoice-table {
+      font-size: 0.7em; /* Even smaller on mobile to fit content */
+    }
+    
+    .invoice-table th, .invoice-table td {
+      padding: 3px 2px; /* Reduced padding for mobile */
+    }
+    
+    /* Adjust column widths for mobile - optimized */
+    .invoice-table th:nth-child(1),
+    .invoice-table td:nth-child(1) {
+      width: 3%;
+    }
+    
+    .invoice-table th:nth-child(2),
+    .invoice-table td:nth-child(2) {
+      width: 34%;
+    }
+    
+    .invoice-table th:nth-child(3),
+    .invoice-table td:nth-child(3) {
+      width: 4%;
+    }
+    
+    .invoice-table th:nth-child(4),
+    .invoice-table td:nth-child(4),
+    .invoice-table th:nth-child(5),
+    .invoice-table td:nth-child(5) {
+      width: 6%;
+    }
+    
+    .invoice-table th:nth-child(6),
+    .invoice-table td:nth-child(6),
+    .invoice-table th:nth-child(10),
+    .invoice-table td:nth-child(10) {
+      width: 7%;
+    }
+    
+    .invoice-table th:nth-child(7),
+    .invoice-table td:nth-child(7),
+    .invoice-table th:nth-child(8),
+    .invoice-table td:nth-child(8),
+    .invoice-table th:nth-child(9),
+    .invoice-table td:nth-child(9) {
+      width: 7%;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .col {
+      max-width: 100%;
+      background: #fff;
+    }
+    .flex-space, .section {
+      flex-direction: column;
+      background: #fff;
+    }
+  }
+
+  @media print {
+    .invoice-box {
+      padding-bottom: 120px !important;
+      background: #fff !important;
+    }
+    .totals, .tax-summary, .footer {
+      page-break-inside: avoid;
+      background: #fff !important;
+    }
+    table, tr, td, th {
+      page-break-inside: avoid !important;
+      background: #fff !important;
+    }
+    .invoice-table th, .invoice-table td {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      background: #fff !important;
+    }
+    .invoice-table tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      display: table-row;
+      background: #fff !important;
+    }
+    
+    /* Print-specific column adjustments */
+    .invoice-table {
+      font-size: 0.65em !important; /* Smaller for print to fit more content */
+    }
+    
+    .invoice-table th, .invoice-table td {
+      padding: 3px 2px !important; /* Reduced padding for print */
+    }
+
+    .edit-icon, .date-actions {
+      display: none !important;
+    }
+  }
+
+  /* PDF export specific styles */
+  .pdf-exporting .invoice-table {
+    font-size: 0.65em !important; /* Smaller for PDF export */
+  }
+  
+  .pdf-exporting .invoice-table th,
+  .pdf-exporting .invoice-table td {
+    padding: 3px 2px !important; /* Reduced padding for PDF */
+  }
+
+  .pdf-exporting .invoice-box,
+  .pdf-exporting .boxed-section,
+  .pdf-exporting .invoice-table,
+  .pdf-exporting .invoice-table th,
+  .pdf-exporting .invoice-table td,
+  .pdf-exporting .bank-details table,
+  .pdf-exporting .bank-details th,
+  .pdf-exporting .bank-details td,
+  .pdf-exporting table,
+  .pdf-exporting th,
+  .pdf-exporting td {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .pdf-exporting .edit-icon,
+  .pdf-exporting .date-actions {
+    display: none !important;
+  }
+  </style>
+</head>
+<body>
+<div class="actions">
+  <button onclick="addItem()">Add Item</button>
+  <button onclick="generatePDF()">Download PDF</button>
+  <button onclick="window.print()">Print</button>
+  <button onclick="refreshInvoiceData()">Refresh Invoice Data</button>
+</div>
+<div class="invoice-box" id="invoice">
+  <h1 class="center">GST Invoice</h1>
+  <div class="flex-space">
+  <div>
+    <strong>Invoice No #</strong><br>
+    <input type="text" id="invoice-no" value="" placeholder="Loading...">
+    <div id="invoice-no-status" class="loading">Loading invoice number...</div>
+  </div>
+  <div class="date-container">
+    <strong>Invoice Date</strong><br>
+    <div class="date-input-wrapper">
+      <div id="invoice-date-display" class="date-display" onclick="enableDateEdit()">
+        <span id="date-text"></span>
+        <span class="edit-icon">✏️</span>
+      </div>
+      <input type="date" id="invoice-date" class="date-input" onblur="handleDateBlur()" onkeydown="handleDateKeydown(event)">
+    </div>
+    <div id="date-actions" class="date-actions">
+      <button class="date-btn save" onclick="saveDateEdit()">Save</button>
+      <button class="date-btn cancel" onclick="cancelDateEdit()">Cancel</button>
+    </div>
+    <div id="invoice-date-status" class="loading">Loading date...</div>
+  </div>
+</div>
+
+  <div class="section">
+  <div class="col" style="max-width: 40%; flex: 0 0 40%;">
+    <div class="boxed-section">
+      <h3>Billed By</h3>
+      <p style="margin: 0;"><strong>BISMILLAH HYDRALIC WORKS</strong></p>
+      <p style="margin: 0;">OPP JAGADESWARI THEATRE, MARKAPUR,</p>
+      <p style="margin: 0;">Andhra Pradesh, India - 523316</p>
+      <p style="margin: 0;">GSTIN: 37GOMPS6036E1ZH</p>
+      <p style="margin: 0;">Phone: +91 99665 94717</p>
+    </div>
+  </div>
+
+  <div class="col" style="max-width: 60%; flex: 0 0 60%;">
+    <div class="boxed-section">
+      <h3>Billed To</h3>
+      <div style="line-height: 1.4;">
+        <p style="margin: 0;">
+          <input type="text" id="customer-name" placeholder="Customer Name" style="width: 100%; font-weight: bold; font-size: 1.0em;">
+        </p>
+        <p style="margin: 0;"><input type="text" id="customer-address1" placeholder="Address Line 1" style="width: 100%;"></p>
+        <p style="margin: 0;"><input type="text" id="customer-address2" placeholder="Address Line 2" style="width: 100%;"></p>
+        <p style="margin: 0;"><input type="text" id="customer-address3" placeholder="Address Line 3" style="width: 100%;"></p>
+        <p style="margin: 0;">
+          <strong>GSTIN:</strong>
+          <input type="text" id="customer-gstin" placeholder="GSTIN" style="width: 80%; font-weight: bold;">
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <table class="invoice-table">
+    <thead>
+    <tr>
+      <th>S.No</th>
+      <th>Item</th>
+      <th>GST Rate</th>
+      <th>Qty</th>
+      <th>Rate</th>
+      <th>Amount</th>
+      <th class="cgst">CGST</th>
+      <th class="sgst">SGST</th>
+      <th class="igst">IGST</th>
+      <th>Total</th>
+    </tr>
+    </thead>
+    <tbody id="item-body"></tbody>
+  </table>
+<div class="totals">
+  <table style="width: 100%; margin-bottom: 8px;">
+    <tr>
+      <td><strong>Total (Before Tax)</strong></td>
+      <td style="width:10px; text-align:center;">:</td>
+      <td>₹<span id="amount-total">0.00</span></td>
+    </tr>
+    <tr id="cgst-row">
+      <td><strong>CGST (9%)</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>₹<span id="cgst-total">0.00</span></td>
+    </tr>
+    <tr id="sgst-row">
+      <td><strong>SGST (9%)</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>₹<span id="sgst-total">0.00</span></td>
+    </tr>
+    <tr id="igst-row">
+      <td><strong>IGST (18%)</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>₹<span id="igst-total">0.00</span></td>
+    </tr>
+    <tr>
+      <td><strong>Reductions</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>₹0.00</td>
+    </tr>
+    <tr>
+      <td><strong>Total Tax</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>₹<span id="tax-total">0.00</span></td>
+    </tr>
+    <tr>
+      <td><strong>Total (After Tax)</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>₹<span id="grand-total">0.00</span></td>
+    </tr>
+    <tr>
+      <td><strong>Amount In Words</strong></td>
+      <td style="text-align:center;">:</td>
+      <td><span id="amount-words">ZERO RUPEES ONLY</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- New table for Total (After Tax) and Amount In Words -->
+<table style="width:100%; border:1px solid #bbb; border-collapse:collapse; margin-top:0; margin-bottom:8px;">
+  <tr>
+    <td style="width:40%; font-weight:bold; background:#f7f7f7; border:1px solid #bbb;">Total (After Tax)</td>
+    <td style="font-weight:bold; font-size:1.1em; border:1px solid #bbb;">
+      ₹<span id="grand-total-bold" style="font-weight:bold;">0.00</span>
+    </td>
+  </tr>
+  <tr>
+    <td style="font-weight:bold; background:#f7f7f7; border:1px solid #bbb;">Amount In Words</td>
+    <td style="font-weight:bold; font-size:1.1em; border:1px solid #bbb;">
+      <span id="amount-words-bold" style="font-weight:bold;">ZERO RUPEES ONLY</span>
+    </td>
+  </tr>
+</table>
+
+<div class="bank-details" style="width:100%; max-width:none; margin-top:8px; margin-bottom:0;">
+  <table style="width:100%; border:1px solid #bbb; border-collapse:collapse; font-size:1em;">
+    <tr>
+      <th colspan="2" style="background:#f7f7f7; text-align:left; padding:4px 8px; border:1px solid #bbb;">Bank Details</th>
+    </tr>
+    <tr>
+      <td style="padding:2px 6px; border:1px solid #bbb; width:30%;">Bank Name</td>
+      <td style="padding:2px 6px; border:1px solid #bbb;">Axis Bank Ltd</td>
+    </tr>
+    <tr>
+      <td style="padding:2px 6px; border:1px solid #bbb;">Holder Name</td>
+      <td style="padding:2px 6px; border:1px solid #bbb;">BISMILLAH HYDRALIC WORKS</td>
+    </tr>
+    <tr>
+      <td style="padding:2px 6px; border:1px solid #bbb;">A/C Number</td>
+      <td style="padding:2px 6px; border:1px solid #bbb;">919020083297697</td>
+    </tr>
+    <tr>
+      <td style="padding:2px 6px; border:1px solid #bbb;">IFSC Code</td>
+      <td style="padding:2px 6px; border:1px solid #bbb;">UTIB0002610</td>
+    </tr>
+    <tr>
+      <td style="padding:2px 6px; border:1px solid #bbb;">Branch</td>
+      <td style="padding:2px 6px; border:1px solid #bbb;">Markapur</td>
+    </tr>
+  </table>
+</div>
+
+<script>
+// Configuration - Change this to match your PHP server URL
+const API_BASE_URL = 'http://localhost/invoice-system';
+
+// Store original date for cancel functionality
+let originalDate = '';
+let isDateEditing = false;
+
+// Function to fetch invoice data from the server
+async function fetchInvoiceData() {
+  const invoiceNoStatus = document.getElementById('invoice-no-status');
+  const invoiceDateStatus = document.getElementById('invoice-date-status');
+  
+  try {
+    // Show loading state
+    invoiceNoStatus.textContent = 'Loading invoice number...';
+    invoiceNoStatus.className = 'loading';
+    invoiceDateStatus.textContent = 'Loading date...';
+    invoiceDateStatus.className = 'loading';
+
+    const response = await fetch(`${API_BASE_URL}/get_next_invoice.php`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Populate the fields
+      document.getElementById('invoice-no').value = data.next_invoice_no.toString().padStart(2, '0');
+      
+      // Set date values
+      const dateFromServer = data.today_date; // yyyy-mm-dd format
+      setInvoiceDate(dateFromServer);
+
+      // Show success status
+      invoiceNoStatus.textContent = "Next invoice number loaded successfully";
+      invoiceNoStatus.className = 'success';
+      invoiceDateStatus.textContent = "Today's date loaded successfully";
+      invoiceDateStatus.className = 'success';
+
+      // Hide status messages after 3 seconds
+      setTimeout(() => {
+        invoiceNoStatus.style.display = 'none';
+        invoiceDateStatus.style.display = 'none';
+      }, 3000);
+
+    } else {
+      throw new Error(data.error || 'Failed to fetch invoice data');
+    }
+
+  } catch (error) {
+    console.error('Error fetching invoice data:', error);
+    
+    // Show error and fallback to default values
+    invoiceNoStatus.textContent = 'Error loading invoice number - using fallback';
+    invoiceNoStatus.className = 'error';
+    invoiceDateStatus.textContent = 'Error loading date - using today';
+    invoiceDateStatus.className = 'error';
+
+    // Fallback values
+    document.getElementById('invoice-no').value = '01';
+    const todayDate = new Date().toISOString().split('T')[0];
+    setInvoiceDate(todayDate);
+
+    // Hide error messages after 5 seconds
+    setTimeout(() => {
+      invoiceNoStatus.style.display = 'none';
+      invoiceDateStatus.style.display = 'none';
+    }, 5000);
+  }
+}
+
+// Function to set the invoice date and update display
+function setInvoiceDate(dateString) {
+  const dateInput = document.getElementById('invoice-date');
+  const dateText = document.getElementById('date-text');
+  
+  dateInput.value = dateString; // yyyy-mm-dd format for input
+  
+  // Convert to dd-mm-yyyy for display
+  const [year, month, day] = dateString.split('-');
+  const displayDate = `${day}-${month}-${year}`;
+  dateText.textContent = displayDate;
+  
+  originalDate = dateString;
+}
+
+// Function to enable date editing
+function enableDateEdit() {
+  if (isDateEditing) return;
+  
+  isDateEditing = true;
+  const dateDisplay = document.getElementById('invoice-date-display');
+  const dateInput = document.getElementById('invoice-date');
+  const dateActions = document.getElementById('date-actions');
+  
+  dateDisplay.classList.add('hidden');
+  dateInput.classList.add('active');
+  dateActions.classList.add('active');
+  
+  // Store current date as original for cancel
+  originalDate = dateInput.value;
+  
+  // Focus on the input
+  dateInput.focus();
+}
+
+// Function to save date edit
+function saveDateEdit() {
+  const dateInput = document.getElementById('invoice-date');
+  const newDate = dateInput.value;
+  
+  if (!newDate) {
+    alert('Please select a valid date');
+    return;
+  }
+  
+  // Update the display with new date
+  setInvoiceDate(newDate);
+  exitDateEdit();
+}
+
+// Function to cancel date edit
+function cancelDateEdit() {
+  const dateInput = document.getElementById('invoice-date');
+  
+  // Restore original date
+  dateInput.value = originalDate;
+  setInvoiceDate(originalDate);
+  exitDateEdit();
+}
+
+// Function to exit date edit mode
+function exitDateEdit() {
+  isDateEditing = false;
+  const dateDisplay = document.getElementById('invoice-date-display');
+  const dateInput = document.getElementById('invoice-date');
+  const dateActions = document.getElementById('date-actions');
+  
+  dateDisplay.classList.remove('hidden');
+  dateInput.classList.remove('active');
+  dateActions.classList.remove('active');
+}
+
+// Handle date input blur
+function handleDateBlur() {
+  // Small delay to allow button clicks to register
+  setTimeout(() => {
+    if (isDateEditing && !document.querySelector('.date-actions:hover')) {
+      saveDateEdit();
+    }
+  }, 150);
+}
+
+// Handle keyboard shortcuts for date editing
+function handleDateKeydown(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    saveDateEdit();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    cancelDateEdit();
+  }
+}
+
+// Function to manually refresh invoice data
+function refreshInvoiceData() {
+  document.getElementById('invoice-no-status').style.display = 'block';
+  document.getElementById('invoice-date-status').style.display = 'block';
+  fetchInvoiceData();
+}
+
+function addItem() { 
+  const tbody = document.getElementById('item-body');
+  const row = document.createElement('tr');
+  const rowCount = tbody.children.length + 1;
+  row.innerHTML = `
+  <td class="sno">${rowCount}</td>
+  <td><input type="text" onchange="recalculate(this)" /></td>
+  <td>18%</td>
+  <td><input type="number" value="1" onchange="recalculate(this)" /></td>
+  <td><input type="number" value="0" onchange="recalculate(this)" /></td>
+  <td class="amount">0.00</td>
+  <td class="cgst">0.00</td>
+  <td class="sgst">0.00</td>
+  <td class="igst">0.00</td>
+  <td><input type="number" class="total-input" value="0.00" min="0" step="0.01" onchange="recalculate(this)" /></td>
+`;
+  tbody.appendChild(row);
+  updateSerialNumbers();
+  recalculate();
+}
+
+function deleteItem(button) {
+  const row = button.closest('tr');
+  row.remove();
+  updateSerialNumbers();
+  recalculate();
+}
+
+function updateSerialNumbers() {
+  const rows = document.querySelectorAll('#item-body tr');
+  rows.forEach((row, index) => {
+    row.querySelector('.sno').textContent = index + 1;
+  });
+}
+
+function recalculate(changedInput) {
+  const rows = document.querySelectorAll('#item-body tr');
+  let amountTotal = 0, cgstTotal = 0, sgstTotal = 0, igstTotal = 0, grandTotal = 0;
+
+  // FIXED: Hardcode seller GSTIN for correct state code
+  const sellerState = getStateCode('37GOMPS6036E1ZH');
+  const customerGSTIN = document.getElementById('customer-gstin').value.trim();
+  const customerState = getStateCode(customerGSTIN);
+
+  const isInterState = (sellerState !== customerState) && customerState !== '';
+
+  rows.forEach(row => {
+    const qtyInput = row.children[3].children[0];
+    const rateInput = row.children[4].children[0];
+    const totalInput = row.children[9].children[0];
+    const qty = parseFloat(qtyInput.value) || 0;
+    let rate = parseFloat(rateInput.value) || 0;
+    let total = parseFloat(totalInput.value) || 0;
+
+    let amount, cgst = 0, sgst = 0, igst = 0;
+
+    if (changedInput === totalInput) {
+      // User edited Total: recalculate base amount, rate, and taxes
+      let baseAmount = total / 1.18;
+      amount = baseAmount;
+      rate = qty ? baseAmount / qty : 0;
+      rateInput.value = rate.toFixed(2);
+
+      if (isInterState) {
+        igst = baseAmount * 0.18;
+        cgst = 0;
+        sgst = 0;
+      } else {
+        cgst = baseAmount * 0.09;
+        sgst = baseAmount * 0.09;
+        igst = 0;
+      }
+    } else {
+      // User edited Qty or Rate: calculate as usual
+      amount = qty * rate;
+      if (isInterState) {
+        igst = amount * 0.18;
+        cgst = 0;
+        sgst = 0;
+      } else {
+        cgst = amount * 0.09;
+        sgst = amount * 0.09;
+        igst = 0;
+      }
+      total = amount + cgst + sgst + igst;
+      totalInput.value = total.toFixed(2);
+    }
+
+    row.querySelector('.amount').textContent = amount.toFixed(2);
+    row.querySelector('.cgst').textContent = cgst ? cgst.toFixed(2) : '0.00';
+    row.querySelector('.sgst').textContent = sgst ? sgst.toFixed(2) : '0.00';
+    row.querySelector('.igst').textContent = igst ? igst.toFixed(2) : '0.00';
+
+    amountTotal += amount;
+    cgstTotal += cgst;
+    sgstTotal += sgst;
+    igstTotal += igst;
+    grandTotal += total;
+  });
+
+  document.getElementById('amount-total').textContent = amountTotal.toFixed(2);
+  document.getElementById('cgst-total').textContent = cgstTotal.toFixed(2);
+  document.getElementById('sgst-total').textContent = sgstTotal.toFixed(2);
+  document.getElementById('igst-total').textContent = igstTotal.toFixed(2);
+  document.getElementById('tax-total').textContent = (cgstTotal + sgstTotal + igstTotal).toFixed(2);
+  document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+  document.getElementById('amount-words').textContent = numberToWords(grandTotal);
+  document.getElementById('grand-total-bold').textContent = grandTotal.toFixed(2);
+  document.getElementById('amount-words-bold').textContent = numberToWords(grandTotal);
+
+  updateTaxColumns();
+}
+
+function generatePDF() {
+  const invoiceBox = document.getElementById('invoice');
+  invoiceBox.classList.add('pdf-exporting');
+
+  const invoiceNo = document.getElementById('invoice-no').value;
+  const invoiceDate = document.getElementById('invoice-date').value; // yyyy-mm-dd for database
+  const invoiceDateDisplay = document.getElementById('date-text').textContent; // dd-mm-yyyy for display
+  const customerName = document.getElementById('customer-name').value.trim() || "Customer";
+  const grandTotal = document.getElementById('grand-total').textContent;
+  const gstinInput = document.getElementById('customer-gstin');
+
+  if (!invoiceNo || !invoiceDate || !customerName || grandTotal === "0.00") {
+    alert("Please fill in invoice number, date, customer name, and at least one item.");
+    invoiceBox.classList.remove('pdf-exporting');
+    return;
+  }
+
+  // Replace GSTIN input with bold span for PDF
+  const gstinSpan = document.createElement('span');
+  gstinSpan.textContent = gstinInput.value;
+  gstinSpan.style.fontWeight = 'bold';
+  gstinSpan.style.letterSpacing = '1px';
+  gstinInput.parentNode.insertBefore(gstinSpan, gstinInput);
+  gstinInput.style.display = 'none';
+
+  // Use the display date format for filename (already in dd-mm-yyyy format)
+  const fileName = `${invoiceNo}_${customerName}.pdf`;
+
+  const opt = {
+    margin: 0,
+    filename: fileName,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().from(invoiceBox).set(opt).outputPdf('blob').then(function (pdfBlob) {
+    gstinInput.style.display = '';
+    gstinSpan.remove();
+
+    // Collect invoice data
+    const items = [];
+    const rows = document.querySelectorAll('#item-body tr');
+    rows.forEach(row => {
+      const itemName = row.children[1].children[0].value;
+      const qty = parseFloat(row.children[3].children[0].value) || 1;
+      const rate = parseFloat(row.children[4].children[0].value) || 0;
+      const total = parseFloat(row.children[9].children[0].value) || 0;
+      if (itemName.trim()) {
+        items.push({
+          name: itemName,
+          gst_rate: 18,
+          qty: qty,
+          rate: rate,
+          amount: qty * rate,
+          cgst: parseFloat(row.querySelector('.cgst').textContent) || 0,
+          sgst: parseFloat(row.querySelector('.sgst').textContent) || 0,
+          igst: parseFloat(row.querySelector('.igst').textContent) || 0,
+          total: total
+        });
+      }
+    });
+
+    const invoiceData = {
+      invoice_no: invoiceNo,
+      invoice_date: invoiceDate,
+      customer_name: customerName,
+      customer_address1: document.getElementById('customer-address1').value,
+      customer_address2: document.getElementById('customer-address2').value,
+      customer_address3: document.getElementById('customer-address3').value,
+      customer_gstin: gstinInput.value,
+      amount_before_tax: parseFloat(document.getElementById('amount-total').textContent) || 0,
+      cgst: parseFloat(document.getElementById('cgst-total').textContent) || 0,
+      sgst: parseFloat(document.getElementById('sgst-total').textContent) || 0,
+      igst: parseFloat(document.getElementById('igst-total').textContent) || 0,
+      total_tax: parseFloat(document.getElementById('tax-total').textContent) || 0,
+      total_after_tax: parseFloat(grandTotal) || 0,
+      amount_in_words: document.getElementById('amount-words').textContent,
+      items: items
+    };
+
+    // Convert PDF to base64 and send to PHP
+    const reader = new FileReader();
+    reader.onloadend = function() {
+      invoiceData.pdf_base64 = reader.result.split(',')[1];
+
+      fetch(`${API_BASE_URL}/insert_invoice.php`, {
+        method: "POST",
+        body: JSON.stringify(invoiceData),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log("✅ Invoice saved successfully:", data);
+        
+        // Trigger PDF download
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        alert("Invoice saved and PDF downloaded successfully!");
+        
+        // Refresh invoice data for next invoice
+        setTimeout(() => {
+          refreshInvoiceData();
+        }, 1000);
+      })
+      .catch(err => {
+        console.error("❌ Save Error:", err);
+        alert("Failed to save invoice. Check browser console for details.");
+        
+        // Still download PDF even if save fails
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+    };
+    reader.readAsDataURL(pdfBlob);
+  });
+
+  invoiceBox.classList.remove('pdf-exporting');
+}
+
+// Initialize the page
+window.onload = function() {
+  fetchInvoiceData(); // Fetch invoice number and date from server
+  updateTaxColumns();
+
+  // Add event listeners
+  document.getElementById('customer-gstin').addEventListener('input', function() {
+    recalculate();
+    updateTaxColumns();
+  });
+
+  // Add event listeners for form inputs
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', function() {
+      // You can add any additional change handlers here if needed
+    });
+  });
+};
+
+function getStateCode(gst) {
+  return gst && gst.length >= 2 ? gst.substring(0, 2) : null;
+}
+
+function updateTaxColumns() {
+  const sellerState = getStateCode('37GOMPS6036E1ZH');
+  const customerGSTIN = document.getElementById('customer-gstin').value.trim();
+  const customerState = getStateCode(customerGSTIN);
+  const isInterState = (sellerState !== customerState) && customerState !== '';
+
+  // Show/hide tax columns in the invoice table
+  document.querySelectorAll('.cgst, .sgst').forEach(el => {
+    el.style.display = isInterState ? 'none' : '';
+  });
+  document.querySelectorAll('.igst').forEach(el => {
+    el.style.display = isInterState ? '' : 'none';
+  });
+
+  // Show/hide tax headers in the table
+  document.querySelectorAll('.invoice-table th').forEach(th => {
+    if (th.textContent === 'CGST' || th.textContent === 'SGST') {
+      th.style.display = isInterState ? 'none' : '';
+    }
+    if (th.textContent === 'IGST') {
+      th.style.display = isInterState ? '' : 'none';
+    }
+  });
+
+  // Show/hide totals section tax lines
+  document.getElementById('cgst-row').style.display = isInterState ? 'none' : '';
+  document.getElementById('sgst-row').style.display = isInterState ? 'none' : '';
+  document.getElementById('igst-row').style.display = isInterState ? '' : 'none';
+}
+
+function numberToWords(num) {
+  const a = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const b = [
+    '', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'
+  ];
+
+  if (typeof num === "string") num = parseFloat(num);
+  if (isNaN(num)) return "Zero Rupees Only";
+
+  let [rupees, paise] = num.toFixed(2).split(".");
+  rupees = parseInt(rupees, 10);
+  paise = parseInt(paise, 10);
+
+  function inWords(n) {
+    if (n < 20) return a[n];
+    if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
+    if (n < 1000) return a[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " and " + inWords(n % 100) : "");
+    if (n < 100000) return inWords(Math.floor(n / 1000)) + " Thousand" + (n % 1000 ? " " + inWords(n % 1000) : "");
+    if (n < 10000000) return inWords(Math.floor(n / 100000)) + " Lakh" + (n % 100000 ? " " + inWords(n % 100000) : "");
+    return inWords(Math.floor(n / 10000000)) + " Crore" + (n % 10000000 ? " " + inWords(n % 10000000) : "");
+  }
+
+  let words = "";
+  if (rupees > 0) words += inWords(rupees) + " Rupees";
+  if (paise > 0) words += (words ? " and " : "") + inWords(paise) + " Paise";
+  if (!words) words = "Zero Rupees";
+  return words + " Only";
+}
+</script>
+</body>
+</html>
