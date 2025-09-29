@@ -1019,6 +1019,8 @@ function recalculate(changedInput) {
 
 function generatePDF() {
   const invoiceBox = document.getElementById('invoice');
+  // Ensure display-only values reflect current inputs before exporting
+  syncBilledToDisplay(true);
   
   // Store current document state
   const originalState = {
@@ -1082,6 +1084,9 @@ function generatePDF() {
     invoiceBox.classList.remove('pdf-exporting');
     gstinInput.style.display = '';
     gstinSpan.remove();
+    // Hide display-only customer name after export
+    const nameDisplay = document.getElementById('customer-name-display');
+    if (nameDisplay) nameDisplay.style.display = 'none';
     // Restore edit icons
     editIcons.forEach(icon => icon.style.display = '');
   });
@@ -1097,6 +1102,9 @@ function generatePDF() {
   html2pdf().from(invoiceBox).set(opt).outputPdf('blob').then(function (pdfBlob) {
     gstinInput.style.display = '';
     gstinSpan.remove();
+    // Hide display-only customer name after export
+    const nameDisplay2 = document.getElementById('customer-name-display');
+    if (nameDisplay2) nameDisplay2.style.display = 'none';
 
     // Collect invoice data
     const items = [];
@@ -1194,6 +1202,34 @@ function generatePDF() {
   });
 
   invoiceBox.classList.remove('pdf-exporting');
+}
+
+// Copy Billed To inputs into display elements for PDF; when forPdf is true,
+// temporarily show the display name element
+function syncBilledToDisplay(forPdf = false) {
+  const dropdown = document.getElementById('customer-dropdown');
+  const nameInput = document.getElementById('customer-name');
+  const nameDisplay = document.getElementById('customer-name-display');
+
+  const customerName = dropdown.value === 'new'
+    ? (nameInput.value || '').trim()
+    : (dropdown.value || '').trim();
+
+  if (nameDisplay) {
+    nameDisplay.textContent = customerName;
+    if (forPdf) nameDisplay.style.display = customerName ? 'block' : 'none';
+  }
+
+  // Address lines
+  const a1 = document.getElementById('customer-address1').value || '';
+  const a2 = document.getElementById('customer-address2').value || '';
+  const a3 = document.getElementById('customer-address3').value || '';
+  const d1 = document.getElementById('address1-display');
+  const d2 = document.getElementById('address2-display');
+  const d3 = document.getElementById('address3-display');
+  if (d1) d1.textContent = a1;
+  if (d2) d2.textContent = a2;
+  if (d3) d3.textContent = a3;
 }
 
 // Initialize the page
@@ -1364,15 +1400,17 @@ function fillCustomerData(customerName) {
     document.getElementById('customer-gstin').value = customer.gstin || '';
     
     // Set display values for PDF
-    document.getElementById('customer-display').textContent = customer.customer_name || '';
+    const nameDisplay = document.getElementById('customer-name-display');
+    if (nameDisplay) nameDisplay.textContent = customer.customer_name || '';
     document.getElementById('address1-display').textContent = customer.address_line1 || '';
     document.getElementById('address2-display').textContent = customer.address_line2 || '';
     document.getElementById('address3-display').textContent = customer.address_line3 || '';
-    document.getElementById('gstin-display').textContent = customer.gstin ? `GSTIN: ${customer.gstin}` : '';
     
     // Trigger recalculation for tax changes
     recalculate();
     updateTaxColumns();
+    // Keep display values in sync for immediate PDF export
+    syncBilledToDisplay(false);
   }
 }
 
