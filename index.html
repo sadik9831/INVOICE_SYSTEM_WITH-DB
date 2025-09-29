@@ -1016,97 +1016,85 @@ function recalculate(changedInput) {
 
   updateTaxColumns();
 }
-
 function generatePDF() {
   const invoiceBox = document.getElementById('invoice');
-  // Ensure display-only values reflect current inputs before exporting
   syncBilledToDisplay(true);
-  
-  // Store current document state
-  const originalState = {
-    html: invoiceBox.innerHTML,
-    className: invoiceBox.className
-  };
-  
-  // Add PDF exporting class to hide edit buttons
-  invoiceBox.classList.add('pdf-exporting');
-  
-  // Store current input values
-  const currentInputs = {};
 
+  // Get all customer inputs
+  const addressInput1 = document.getElementById('customer-address1');
+  const addressInput2 = document.getElementById('customer-address2');
+  const addressInput3 = document.getElementById('customer-address3');
+  const addressInputs = [addressInput1, addressInput2, addressInput3];
+  
   const invoiceNo = document.getElementById('invoice-no').value;
-  const invoiceDate = document.getElementById('invoice-date').value; // yyyy-mm-dd for database
-  const invoiceDateDisplay = document.getElementById('date-text').textContent; // dd-mm-yyyy for display
+  const invoiceDate = document.getElementById('invoice-date').value;
   const dropdown = document.getElementById('customer-dropdown');
-  const customerName = dropdown.value === 'new' 
-    ? document.getElementById('customer-name').value.trim() 
-    : dropdown.value || '';
+  const customerName = dropdown.value === 'new'
+    ? document.getElementById('customer-name').value.trim()
+    : dropdown.options[dropdown.selectedIndex].text;
   const grandTotal = document.getElementById('grand-total').textContent;
   const gstinInput = document.getElementById('customer-gstin');
-
+  
   if (!invoiceNo || !invoiceDate || !customerName || grandTotal === "0.00") {
     alert("Please fill in invoice number, date, customer name, and at least one item.");
-    invoiceBox.classList.remove('pdf-exporting');
     return;
   }
 
-  // Replace GSTIN input with bold span for PDF
-  const gstinSpan = document.createElement('span');
-  gstinSpan.textContent = gstinInput.value;
-  gstinSpan.style.fontWeight = 'bold';
-  gstinSpan.style.letterSpacing = '1px';
-  gstinInput.parentNode.insertBefore(gstinSpan, gstinInput);
-  gstinInput.style.display = 'none';
+  // --- PREPARE UI FOR PDF GENERATION ---
 
-  // Use the display date format for filename (already in dd-mm-yyyy format)
+  // Hide action buttons and edit icons that shouldn't be in the PDF
+  const elementsToHide = invoiceBox.querySelectorAll('.edit-icon, .date-actions, button, [class*="edit"]');
+  elementsToHide.forEach(el => el.style.display = 'none');
+  
+  // Select the original "Billed To" section which contains the form
+  const originalBilledToSection = document.querySelectorAll('.boxed-section')[1];
+
+  // Create a new, clean "Billed To" box for the PDF
+  const pdfBilledToBox = document.createElement('div');
+  pdfBilledToBox.className = 'boxed-section'; // Use the same class for consistent styling
+
+  // Gather all data for the new box
+  const addressLines = addressInputs
+    .map(input => input.value.trim())
+    .filter(line => line)
+    .join('<br>');
+  const gstinValue = gstinInput.value.trim();
+
+  // Populate the new box with clean HTML
+  pdfBilledToBox.innerHTML = `
+    <h3>Billed To</h3>
+    <p style="margin: 0; font-weight: bold; font-size: 1.0em;">${customerName}</p>
+    <p style="margin: 0; line-height: 1.4; margin-top: 4px;">${addressLines}</p>
+    <p style="margin: 0; font-weight: bold; margin-top: 8px;">GSTIN: ${gstinValue}</p>
+  `;
+  
+  // Temporarily replace the original form with the clean PDF version
+  if (originalBilledToSection) {
+    originalBilledToSection.parentNode.insertBefore(pdfBilledToBox, originalBilledToSection);
+    originalBilledToSection.style.display = 'none';
+  }
+
   const fileName = `${invoiceNo}_${customerName}.pdf`;
-
-  // Configure PDF options
   const pdfOptions = {
     margin: [0, 0],
     filename: fileName,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { 
-      scale: 2,
-      scrollY: 0,
-      windowWidth: document.documentElement.clientWidth
-    },
+    html2canvas: { scale: 2, scrollY: 0, windowWidth: document.documentElement.clientWidth },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
-  // Hide all edit icons before generating PDF
-  const editIcons = invoiceBox.querySelectorAll('.edit-icon, .date-actions, button, [class*="edit"]');
-  editIcons.forEach(icon => icon.style.display = 'none');
+  html2pdf().set(pdfOptions).from(invoiceBox).outputPdf('blob').then(function(pdfBlob) {
+    // --- RESTORE UI AFTER PDF GENERATION ---
+    
+    // Remove the temporary PDF box and show the original form again
+    pdfBilledToBox.remove();
+    if (originalBilledToSection) {
+        originalBilledToSection.style.display = '';
+    }
+    
+    // Show the action buttons and icons again
+    elementsToHide.forEach(el => el.style.display = '');
 
-  // Generate PDF
-  html2pdf().set(pdfOptions).from(invoiceBox).save().then(() => {
-    // Restore the interface after PDF generation
-    invoiceBox.classList.remove('pdf-exporting');
-    gstinInput.style.display = '';
-    gstinSpan.remove();
-    // Hide display-only customer name after export
-    const nameDisplay = document.getElementById('customer-name-display');
-    if (nameDisplay) nameDisplay.style.display = 'none';
-    // Restore edit icons
-    editIcons.forEach(icon => icon.style.display = '');
-  });
-
-  const opt = {
-    margin: 0,
-    filename: fileName,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
-  html2pdf().from(invoiceBox).set(opt).outputPdf('blob').then(function (pdfBlob) {
-    gstinInput.style.display = '';
-    gstinSpan.remove();
-    // Hide display-only customer name after export
-    const nameDisplay2 = document.getElementById('customer-name-display');
-    if (nameDisplay2) nameDisplay2.style.display = 'none';
-
-    // Collect invoice data
     const items = [];
     const rows = document.querySelectorAll('#item-body tr');
     rows.forEach(row => {
@@ -1147,26 +1135,17 @@ function generatePDF() {
       items: items
     };
 
-    // Convert PDF to base64 and send to PHP
     const reader = new FileReader();
     reader.onloadend = function() {
       invoiceData.pdf_base64 = reader.result.split(',')[1];
-
       fetch(`${API_BASE_URL}/insert_invoice.php`, {
         method: "POST",
         body: JSON.stringify(invoiceData),
-        headers: {
-          "Content-Type": "application/json"
-        }
+        headers: { "Content-Type": "application/json" }
       })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
+      .then(res => res.json())
       .then(data => {
         console.log("✅ Invoice saved successfully:", data);
-        
-        // Trigger PDF download
         const url = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -1175,19 +1154,12 @@ function generatePDF() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
         alert("Invoice saved and PDF downloaded successfully!");
-        
-        // Refresh invoice data for next invoice
-        setTimeout(() => {
-          refreshInvoiceData();
-        }, 1000);
+        setTimeout(() => refreshInvoiceData(), 1000);
       })
       .catch(err => {
         console.error("❌ Save Error:", err);
-        alert("Failed to save invoice. Check browser console for details.");
-        
-        // Still download PDF even if save fails
+        alert("Failed to save invoice. PDF will still download.");
         const url = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -1200,9 +1172,14 @@ function generatePDF() {
     };
     reader.readAsDataURL(pdfBlob);
   });
-
-  invoiceBox.classList.remove('pdf-exporting');
 }
+
+
+
+
+
+
+
 
 // Copy Billed To inputs into display elements for PDF; when forPdf is true,
 // temporarily show the display name element
@@ -1219,6 +1196,8 @@ function syncBilledToDisplay(forPdf = false) {
     nameDisplay.textContent = customerName;
     if (forPdf) nameDisplay.style.display = customerName ? 'block' : 'none';
   }
+
+
 
   // Address lines
   const a1 = document.getElementById('customer-address1').value || '';
