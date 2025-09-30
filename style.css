@@ -1,0 +1,515 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #fff;
+  }
+
+  .invoice-box {
+    max-width: 900px;
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #eee;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    color: #333;
+    padding-bottom: 60px;
+    background: #fff;
+  }
+
+  h1.center {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #222;
+    background: #fff;
+  }
+
+  .flex-space {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+  .boxed-section {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+  }
+
+  .section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+
+  .col {
+    width: 100%;
+    max-width: 48%;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+
+  /* Dynamic table layout with flexible columns */
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background: #fff;
+    table-layout: fixed; /* Enable fixed layout for better control */
+    font-size: 0.8em; /* Reduce text size by 20% */
+  }
+
+  .invoice-table th, .invoice-table td {
+    border: 1px solid #bbb;
+    padding: 6px; /* Reduced padding to compensate for smaller text */
+    text-align: center;
+    vertical-align: middle;
+    background: #fff;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-size: inherit; /* Inherit the reduced font size */
+  }
+
+  .invoice-table th {
+    background-color: #fff !important;
+    font-weight: bold;
+  }
+
+  /* Column width specifications - Optimized without extra space */
+  .invoice-table th:nth-child(1),  /* S.No */
+  .invoice-table td:nth-child(1) {
+    width: 4%;
+    min-width: 35px;
+  }
+
+  .invoice-table th:nth-child(2),  /* Item - Center aligned header */
+  .invoice-table td:nth-child(2) {
+    width: 30%;
+    min-width: 120px;
+  }
+
+  .invoice-table th:nth-child(3),  /* GST Rate */
+  .invoice-table td:nth-child(3) {
+    width: 5%;
+    min-width: 40px;
+  }
+
+  .invoice-table th:nth-child(4),  /* Qty */
+  .invoice-table td:nth-child(4) {
+    width: 5%;
+    min-width: 40px;
+  }
+
+  .invoice-table th:nth-child(5),  /* Rate */
+  .invoice-table td:nth-child(5) {
+    width: 7%;
+    min-width: 50px;
+  }
+
+  .invoice-table th:nth-child(6),  /* Amount */
+  .invoice-table td:nth-child(6) {
+    width: 9%;
+    min-width: 60px;
+  }
+
+  .invoice-table th:nth-child(7),  /* CGST */
+  .invoice-table td:nth-child(7),
+  .invoice-table th:nth-child(8),  /* SGST */
+  .invoice-table td:nth-child(8),
+  .invoice-table th:nth-child(9),  /* IGST */
+  .invoice-table td:nth-child(9) {
+    width: 8%;
+    min-width: 55px;
+  }
+
+  .invoice-table th:nth-child(10), /* Total */
+  .invoice-table td:nth-child(10) {
+    width: 7%;
+    min-width: 60px;
+  }
+
+  /* Input field styling within table cells */
+  .invoice-table input[type="text"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 3px; /* Reduced padding for smaller text */
+    font-size: inherit;
+    text-align: inherit;
+    box-sizing: border-box;
+  }
+
+  .invoice-table input[type="number"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 3px; /* Reduced padding for smaller text */
+    font-size: inherit;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  /* Specific input sizing for narrow columns */
+  .invoice-table td:nth-child(4) input,  /* Qty input */
+  .invoice-table td:nth-child(5) input {  /* Rate input */
+    padding: 2px;
+    font-size: 0.9em; /* Slightly smaller for these narrow columns */
+  }
+
+  /* Item column input - center aligned like header */
+  .invoice-table td:nth-child(2) input {
+    text-align: center;
+    padding: 3px;
+  }
+
+  .tax-summary table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background: #fff;
+  }
+
+  .tax-summary th, .tax-summary td {
+    border: 1px solid #bbb;
+    padding: 8px;
+    text-align: left;
+    background: #fff;
+  }
+
+  .totals p {
+    margin: 5px 0;
+    background: #fff;
+  }
+
+  .tax-summary h4 {
+    margin-bottom: 10px;
+    color: #444;
+    background: #fff;
+  }
+
+  .footer {
+    margin-top: 30px;
+    font-style: italic;
+    font-size: 0.9em;
+    color: #666;
+    background: #fff;
+  }
+
+  .actions {
+    text-align: center;
+    margin-bottom: 30px;
+    background: #fff;
+  }
+
+  .actions button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #004aad;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+
+  .actions button:hover {
+    background-color: #003a8c;
+  }
+
+  input[type="text"], input[type="number"], input[type="date"] {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  /* Bank details table */
+  .bank-details,
+  .bank-details table,
+  .bank-details th,
+  .bank-details td {
+    background: #fff !important;
+  }
+
+  /* Remove any gray backgrounds from summary tables */
+  [style*="background:#f7f7f7"] {
+    background: #fff !important;
+  }
+
+  .flex-space > div input {
+    margin-top: 4px;
+  }
+
+  /* Loading indicator styles */
+  .loading {
+    color: #666;
+    font-style: italic;
+  }
+
+  .error {
+    color: #d32f2f;
+    font-weight: bold;
+  }
+
+  .success {
+    color: #2e7d32;
+    font-weight: bold;
+  }
+
+  /* Date editing styles */
+  .date-container {
+    position: relative;
+  }
+
+  .date-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .date-display {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    min-height: 20px;
+    min-width: 120px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .date-display:hover {
+    background-color: #f8f9fa;
+    border-color: #999;
+  }
+
+  .edit-icon {
+    margin-left: 5px;
+    color: #666;
+    font-size: 12px;
+  }
+
+  .date-input {
+    display: none;
+  }
+
+  .date-input.active {
+    display: inline-block;
+  }
+
+  .date-display.hidden {
+    display: none !important;
+  }
+
+  .date-actions {
+    display: none;
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .date-actions.active {
+    display: flex;
+  }
+
+  .date-btn {
+    padding: 2px 8px;
+    font-size: 12px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .date-btn.save {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .date-btn.cancel {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .date-btn:hover {
+    opacity: 0.8;
+  }
+
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .invoice-table {
+      font-size: 0.7em; /* Even smaller on mobile to fit content */
+    }
+    
+    .invoice-table th, .invoice-table td {
+      padding: 3px 2px; /* Reduced padding for mobile */
+    }
+    
+    /* Adjust column widths for mobile - optimized */
+    .invoice-table th:nth-child(1),
+    .invoice-table td:nth-child(1) {
+      width: 3%;
+    }
+    
+    .invoice-table th:nth-child(2),
+    .invoice-table td:nth-child(2) {
+      width: 34%;
+    }
+    
+    .invoice-table th:nth-child(3),
+    .invoice-table td:nth-child(3) {
+      width: 4%;
+    }
+    
+    .invoice-table th:nth-child(4),
+    .invoice-table td:nth-child(4),
+    .invoice-table th:nth-child(5),
+    .invoice-table td:nth-child(5) {
+      width: 6%;
+    }
+    
+    .invoice-table th:nth-child(6),
+    .invoice-table td:nth-child(6),
+    .invoice-table th:nth-child(10),
+    .invoice-table td:nth-child(10) {
+      width: 7%;
+    }
+    
+    .invoice-table th:nth-child(7),
+    .invoice-table td:nth-child(7),
+    .invoice-table th:nth-child(8),
+    .invoice-table td:nth-child(8),
+    .invoice-table th:nth-child(9),
+    .invoice-table td:nth-child(9) {
+      width: 7%;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .col {
+      max-width: 100%;
+      background: #fff;
+    }
+    .flex-space, .section {
+      flex-direction: column;
+      background: #fff;
+    }
+  }
+
+  @media print {
+    .invoice-box {
+      padding-bottom: 120px !important;
+      background: #fff !important;
+    }
+    .totals, .tax-summary, .footer {
+      page-break-inside: avoid;
+      background: #fff !important;
+    }
+    table, tr, td, th {
+      page-break-inside: avoid !important;
+      background: #fff !important;
+    }
+    .invoice-table th, .invoice-table td {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      background: #fff !important;
+    }
+    .invoice-table tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      display: table-row;
+      background: #fff !important;
+    }
+    
+    /* Print-specific column adjustments */
+    .invoice-table {
+      font-size: 0.65em !important; /* Smaller for print to fit more content */
+    }
+    
+    .invoice-table th, .invoice-table td {
+      padding: 3px 2px !important; /* Reduced padding for print */
+    }
+
+    .edit-icon, .date-actions {
+      display: none !important;
+    }
+  }
+
+  /* PDF export specific styles */
+  .pdf-exporting .invoice-table {
+    font-size: 0.65em !important; /* Smaller for PDF export */
+  }
+  
+  .pdf-exporting .invoice-table th,
+  .pdf-exporting .invoice-table td {
+    padding: 3px 2px !important; /* Reduced padding for PDF */
+  }
+
+  .pdf-exporting .invoice-box,
+  .pdf-exporting .boxed-section,
+  .pdf-exporting .invoice-table,
+  .pdf-exporting .invoice-table th,
+  .pdf-exporting .invoice-table td,
+  .pdf-exporting .bank-details table,
+  .pdf-exporting .bank-details th,
+  .pdf-exporting .bank-details td,
+  .pdf-exporting table,
+  .pdf-exporting th,
+  .pdf-exporting td {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .pdf-exporting .edit-icon,
+  .pdf-exporting .date-actions,
+  .pdf-exporting .edit-button,
+  .pdf-exporting span[class*="edit"],
+  .pdf-exporting .pencil-icon,
+  .pdf-exporting *[class*="edit"],
+  .pdf-exporting button,
+  .pdf-exporting select,
+  .pdf-exporting #customer-dropdown,
+  .pdf-exporting .loading,
+  .pdf-exporting label,
+  .pdf-exporting #customer-name,
+  .pdf-exporting #date-actions,
+  .pdf-exporting .action-buttons {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  .pdf-exporting input {
+    border: none !important;
+    background: transparent !important;
+    font-size: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .pdf-exporting .boxed-section {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  .pdf-exporting input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    border: none;
+    background: transparent;
+  }
+
+  .pdf-exporting input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none !important;
+  }
