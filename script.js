@@ -356,6 +356,21 @@ function generatePDF() {
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
+  // Temporarily render Item inputs as multi-line spans for better wrapping in PDF
+  const itemReplacements = [];
+  document.querySelectorAll('#item-body tr').forEach(row => {
+    const itemCell = row.children[1];
+    const input = itemCell && itemCell.querySelector('input[type="text"]');
+    if (input) {
+      const span = document.createElement('span');
+      span.className = 'item-text-span';
+      span.textContent = input.value;
+      itemCell.appendChild(span);
+      input.style.display = 'none';
+      itemReplacements.push({ input, span });
+    }
+  });
+
   html2pdf().set(pdfOptions).from(invoiceBox).outputPdf('blob').then(function(pdfBlob) {
     // --- RESTORE UI AFTER PDF GENERATION ---
     
@@ -367,6 +382,12 @@ function generatePDF() {
     
     // Show the action buttons and icons again
     elementsToHide.forEach(el => el.style.display = '');
+
+    // Restore item inputs
+    itemReplacements.forEach(({ input, span }) => {
+      if (span && span.parentNode) span.parentNode.removeChild(span);
+      if (input) input.style.display = '';
+    });
 
     const items = [];
     const rows = document.querySelectorAll('#item-body tr');

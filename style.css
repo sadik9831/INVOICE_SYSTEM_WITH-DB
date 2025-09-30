@@ -133,6 +133,21 @@ body {
     min-width: 60px;
   }
 
+  /* Numeric data cells: right align, single line, tabular numbers */
+  .invoice-table td:nth-child(4),
+  .invoice-table td:nth-child(5),
+  .invoice-table td:nth-child(6),
+  .invoice-table td:nth-child(7),
+  .invoice-table td:nth-child(8),
+  .invoice-table td:nth-child(9),
+  .invoice-table td:nth-child(10) {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    font-size: 0.85em;
+  }
+
   /* Input field styling within table cells */
   .invoice-table input[type="text"] {
     width: 100%;
@@ -161,10 +176,40 @@ body {
     font-size: 0.9em; /* Slightly smaller for these narrow columns */
   }
 
-  /* Item column input - center aligned like header */
+  /* Item column input - left aligned for readability */
   .invoice-table td:nth-child(2) input {
-    text-align: center;
+    text-align: left;
     padding: 3px;
+  }
+
+  /* Totals table: keep numbers on one line and right aligned */
+  .totals table td:last-child {
+    white-space: nowrap;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    font-size: 0.95em;
+  }
+
+  /* Allow Amount In Words to wrap across multiple lines */
+  .totals table tr:last-child td:last-child {
+    white-space: normal !important;
+  }
+  #amount-words,
+  #amount-words-bold {
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    display: inline;
+  }
+
+  /* Keep labels in totals section on one line */
+  .totals table td:first-child {
+    white-space: nowrap;
+  }
+  /* Also keep labels of the next summary table (Total After Tax / Amount In Words) single-line */
+  .totals + table td:first-child {
+    white-space: nowrap;
   }
 
   .tax-summary table {
@@ -436,6 +481,16 @@ body {
     .invoice-table th, .invoice-table td {
       padding: 3px 2px !important; /* Reduced padding for print */
     }
+    /* Make numeric cells slightly smaller for print */
+    .invoice-table td:nth-child(4),
+    .invoice-table td:nth-child(5),
+    .invoice-table td:nth-child(6),
+    .invoice-table td:nth-child(7),
+    .invoice-table td:nth-child(8),
+    .invoice-table td:nth-child(9),
+    .invoice-table td:nth-child(10) {
+      font-size: 0.75em !important;
+    }
 
     .edit-icon, .date-actions {
       display: none !important;
@@ -512,4 +567,26 @@ body {
 
   .pdf-exporting input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
+  }
+
+  /* PDF export: show item text as multi-line by converting input to block span */
+  .pdf-exporting .item-text-span {
+    display: block;
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  /* Ensure numeric cells stay single-line in PDF/print as well */
+  @media print {
+    .invoice-table td:nth-child(4),
+    .invoice-table td:nth-child(5),
+    .invoice-table td:nth-child(6),
+    .invoice-table td:nth-child(7),
+    .invoice-table td:nth-child(8),
+    .invoice-table td:nth-child(9),
+    .invoice-table td:nth-child(10) {
+      white-space: nowrap !important;
+    }
   }
