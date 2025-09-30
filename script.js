@@ -505,24 +505,7 @@ function syncBilledToDisplay(forPdf = false) {
   if (d3) d3.textContent = a3;
 }
 
-// Initialize the page
-window.onload = function() {
-  fetchInvoiceData(); // Fetch invoice number and date from server
-  updateTaxColumns();
-
-  // Add event listeners
-  document.getElementById('customer-gstin').addEventListener('input', function() {
-    recalculate();
-    updateTaxColumns();
-  });
-
-  // Add event listeners for form inputs
-  document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('change', function() {
-      // You can add any additional change handlers here if needed
-    });
-  });
-};
+// Event handlers are initialized in the main window.onload function below
 
 function getStateCode(gst) {
   return gst && gst.length >= 2 ? gst.substring(0, 2) : null;
