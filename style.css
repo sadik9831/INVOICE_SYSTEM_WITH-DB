@@ -1,3 +1,4 @@
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -535,7 +536,9 @@ body {
   .pdf-exporting label,
   .pdf-exporting #customer-name,
   .pdf-exporting #date-actions,
-  .pdf-exporting .action-buttons {
+  .pdf-exporting .action-buttons,
+  .pdf-exporting #discount-value,
+  .pdf-exporting #discount-type {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;

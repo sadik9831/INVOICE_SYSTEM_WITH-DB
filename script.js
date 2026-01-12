@@ -277,15 +277,56 @@ function recalculate(changedInput) {
     grandTotal += total;
   });
 
+  // Calculate discount
+  const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+  const discountType = document.getElementById('discount-type').value;
+  let discountAmount = 0;
+  
+  if (discountType === 'percent') {
+    discountAmount = (amountTotal * discountValue) / 100;
+  } else {
+    discountAmount = discountValue;
+  }
+  
+  // Ensure discount doesn't exceed total
+  if (discountAmount > amountTotal) {
+    discountAmount = amountTotal;
+    if (discountType === 'fixed') {
+      document.getElementById('discount-value').value = amountTotal.toFixed(2);
+    }
+  }
+  
+  const amountAfterDiscount = amountTotal - discountAmount;
+  
+  // Recalculate taxes based on discounted amount
+  const taxOnDiscountedAmount = (cgstTotal + sgstTotal + igstTotal) * (amountAfterDiscount / (amountTotal || 1));
+  
+  // Recalculate individual taxes proportionally
+  let finalCgst = 0, finalSgst = 0, finalIgst = 0;
+  if (isInterState) {
+    finalIgst = taxOnDiscountedAmount;
+  } else {
+    finalCgst = taxOnDiscountedAmount / 2;
+    finalSgst = taxOnDiscountedAmount / 2;
+  }
+  
+  const finalGrandTotal = amountAfterDiscount + taxOnDiscountedAmount;
+  
   document.getElementById('amount-total').textContent = amountTotal.toFixed(2);
-  document.getElementById('cgst-total').textContent = cgstTotal.toFixed(2);
-  document.getElementById('sgst-total').textContent = sgstTotal.toFixed(2);
-  document.getElementById('igst-total').textContent = igstTotal.toFixed(2);
-  document.getElementById('tax-total').textContent = (cgstTotal + sgstTotal + igstTotal).toFixed(2);
-  document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
-  document.getElementById('amount-words').textContent = numberToWords(grandTotal);
-  document.getElementById('grand-total-bold').textContent = grandTotal.toFixed(2);
-  document.getElementById('amount-words-bold').textContent = numberToWords(grandTotal);
+  document.getElementById('discount-amount').textContent = discountAmount.toFixed(2);
+  document.getElementById('amount-after-discount').textContent = amountAfterDiscount.toFixed(2);
+  document.getElementById('cgst-total').textContent = finalCgst.toFixed(2);
+  document.getElementById('sgst-total').textContent = finalSgst.toFixed(2);
+  document.getElementById('igst-total').textContent = finalIgst.toFixed(2);
+  document.getElementById('tax-total').textContent = taxOnDiscountedAmount.toFixed(2);
+  document.getElementById('grand-total').textContent = finalGrandTotal.toFixed(2);
+  document.getElementById('amount-words').textContent = numberToWords(finalGrandTotal);
+  document.getElementById('grand-total-bold').textContent = finalGrandTotal.toFixed(2);
+  document.getElementById('amount-words-bold').textContent = numberToWords(finalGrandTotal);
+  
+  // Update discount display for PDF
+  const discountTypeText = discountType === 'percent' ? discountValue + '%' : '₹' + discountValue;
+  document.getElementById('discount-type-text').textContent = discountTypeText;
 
   updateTaxColumns();
 }
@@ -316,8 +357,14 @@ function generatePDF() {
   // --- PREPARE UI FOR PDF GENERATION ---
 
   // Hide action buttons and edit icons that shouldn't be in the PDF
-  const elementsToHide = invoiceBox.querySelectorAll('.edit-icon, .date-actions, button, [class*="edit"]');
+  const elementsToHide = invoiceBox.querySelectorAll('.edit-icon, .date-actions, button, [class*="edit"], .pdf-hide');
   elementsToHide.forEach(el => el.style.display = 'none');
+  
+  // Show discount display for PDF
+  const discountDisplayPdf = document.getElementById('discount-display-pdf');
+  if (discountDisplayPdf && parseFloat(document.getElementById('discount-value').value) > 0) {
+    discountDisplayPdf.style.display = 'inline';
+  }
   
   // Select the original "Billed To" section which contains the form
   const originalBilledToSection = document.querySelectorAll('.boxed-section')[1];
@@ -374,6 +421,12 @@ function generatePDF() {
   html2pdf().set(pdfOptions).from(invoiceBox).outputPdf('blob').then(function(pdfBlob) {
     // --- RESTORE UI AFTER PDF GENERATION ---
     
+    // Hide discount display for PDF
+    const discountDisplayPdf = document.getElementById('discount-display-pdf');
+    if (discountDisplayPdf) {
+      discountDisplayPdf.style.display = 'none';
+    }
+    
     // Remove the temporary PDF box and show the original form again
     pdfBilledToBox.remove();
     if (originalBilledToSection) {
@@ -420,6 +473,10 @@ function generatePDF() {
       customer_address3: document.getElementById('customer-address3').value,
       customer_gstin: gstinInput.value,
       amount_before_tax: parseFloat(document.getElementById('amount-total').textContent) || 0,
+      discount_type: document.getElementById('discount-type').value,
+      discount_value: parseFloat(document.getElementById('discount-value').value) || 0,
+      discount_amount: parseFloat(document.getElementById('discount-amount').textContent) || 0,
+      amount_after_discount: parseFloat(document.getElementById('amount-after-discount').textContent) || 0,
       cgst: parseFloat(document.getElementById('cgst-total').textContent) || 0,
       sgst: parseFloat(document.getElementById('sgst-total').textContent) || 0,
       igst: parseFloat(document.getElementById('igst-total').textContent) || 0,
@@ -505,7 +562,24 @@ function syncBilledToDisplay(forPdf = false) {
   if (d3) d3.textContent = a3;
 }
 
-// Event handlers are initialized in the main window.onload function below
+// Initialize the page
+window.onload = function() {
+  fetchInvoiceData(); // Fetch invoice number and date from server
+  updateTaxColumns();
+
+  // Add event listeners
+  document.getElementById('customer-gstin').addEventListener('input', function() {
+    recalculate();
+    updateTaxColumns();
+  });
+
+  // Add event listeners for form inputs
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', function() {
+      // You can add any additional change handlers here if needed
+    });
+  });
+};
 
 function getStateCode(gst) {
   return gst && gst.length >= 2 ? gst.substring(0, 2) : null;
@@ -769,3 +843,4 @@ window.onload = async function() {
     console.error('Error during initialization:', error);
   }
 };
+

@@ -32,13 +32,17 @@ try {
     $pdo->beginTransaction();
     
     // Insert into invoices table
-    $stmt = $pdo->prepare("INSERT INTO invoices (invoice_no, invoice_date, customer_name, customer_gstin, amount_before_tax, total_tax, total_after_tax) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO invoices (invoice_no, invoice_date, customer_name, customer_gstin, amount_before_tax, discount_type, discount_value, discount_amount, amount_after_discount, total_tax, total_after_tax) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
         $data['invoice_no'],
         $data['invoice_date'],
         $data['customer_name'],
         $data['customer_gstin'],
         $data['amount_before_tax'],
+        $data['discount_type'] ?? 'fixed',
+        $data['discount_value'] ?? 0,
+        $data['discount_amount'] ?? 0,
+        $data['amount_after_discount'] ?? $data['amount_before_tax'],
         $data['total_tax'],
         $data['total_after_tax']
     ]);

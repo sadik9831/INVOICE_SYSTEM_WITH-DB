@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>GST Invoice</title>
+  <title>GST INVOICE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="style.css">
@@ -15,15 +15,15 @@
   <button onclick="refreshInvoiceData()">Refresh Invoice Data</button>
 </div>
 <div class="invoice-box" id="invoice">
-  <h1 class="center">GST Invoice</h1>
+  <h1 class="center">GST INVOICE</h1>
   <div class="flex-space">
   <div>
-    <strong>Invoice No #</strong><br>
+    <strong>INVOICE NO</strong><br>
     <input type="text" id="invoice-no" value="" placeholder="Loading...">
     <div id="invoice-no-status" class="loading">Loading invoice number...</div>
   </div>
   <div class="date-container">
-    <strong>Invoice Date</strong><br>
+    <strong>INVOICE DATE</strong><br>
     <div class="date-input-wrapper">
       <div id="invoice-date-display" class="date-display" onclick="enableDateEdit()">
         <span id="date-text"></span>
@@ -125,6 +125,26 @@
       <td style="width:10px; text-align:center;">:</td>
       <td>₹<span id="amount-total">0.00</span></td>
     </tr>
+    <tr>
+      <td><strong>Discount</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <input type="number" id="discount-value" value="0" min="0" step="0.01" onchange="recalculate()" style="width: 80px; padding: 3px;" class="pdf-hide">
+          <select id="discount-type" onchange="recalculate()" style="width: 60px; padding: 3px;" class="pdf-hide">
+            <option value="fixed">₹</option>
+            <option value="percent">%</option>
+          </select>
+          <span id="discount-display-pdf" style="display: none;">(<span id="discount-type-text"></span>)</span>
+          <span style="margin-left: 0px;">₹<span id="discount-amount">0.00</span></span>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Total After Discount</strong></td>
+      <td style="text-align:center;">:</td>
+      <td>₹<span id="amount-after-discount">0.00</span></td>
+    </tr>
     <tr id="cgst-row">
       <td><strong>CGST (9%)</strong></td>
       <td style="text-align:center;">:</td>
@@ -139,11 +159,6 @@
       <td><strong>IGST (18%)</strong></td>
       <td style="text-align:center;">:</td>
       <td>₹<span id="igst-total">0.00</span></td>
-    </tr>
-    <tr>
-      <td><strong>Reductions</strong></td>
-      <td style="text-align:center;">:</td>
-      <td>₹0.00</td>
     </tr>
     <tr>
       <td><strong>Total Tax</strong></td>
