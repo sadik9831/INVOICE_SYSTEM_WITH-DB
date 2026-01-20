@@ -267,6 +267,21 @@ body {
     background-color: #003a8c;
   }
 
+  /* Delete button in table */
+  .delete-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .delete-btn:hover {
+    background-color: #c82333;
+  }
+
   input[type="text"], input[type="number"], input[type="date"] {
     width: 100%;
     padding: 5px;
@@ -386,6 +401,50 @@ body {
 
   .date-btn:hover {
     opacity: 0.8;
+  }
+
+  /* Load Invoice Section */
+  .load-invoice-section {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 2px solid #004aad;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .load-invoice-box h3 {
+    margin-top: 0;
+    color: #004aad;
+    margin-bottom: 15px;
+  }
+
+  #old-invoice-dropdown {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  #load-invoice-status {
+    font-size: 14px;
+    padding: 5px;
+  }
+
+  #load-invoice-status.loading {
+    color: #007bff;
+  }
+
+  #load-invoice-status.success {
+    color: #28a745;
+  }
+
+  #load-invoice-status.error {
+    color: #dc3545;
+  }
+
+  .warning {
+    color: #ff9800 !important;
+    font-weight: bold;
   }
 
   /* Responsive design */

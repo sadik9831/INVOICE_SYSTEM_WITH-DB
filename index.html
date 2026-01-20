@@ -13,7 +13,25 @@
   <button onclick="generatePDF()">Download PDF</button>
   <button onclick="window.print()">Print</button>
   <button onclick="refreshInvoiceData()">Refresh Invoice Data</button>
+  <button onclick="toggleLoadInvoice()" style="background-color: #28a745;">Load Old Invoice</button>
+  <button onclick="resetToNewInvoice()" style="background-color: #ff9800;">New Invoice</button>
 </div>
+
+<!-- Load Invoice Section -->
+<div id="load-invoice-section" class="load-invoice-section" style="display: none;">
+  <div class="load-invoice-box">
+    <h3>Load Existing Invoice</h3>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <select id="old-invoice-dropdown" style="flex: 1; padding: 8px; font-size: 14px;">
+        <option value="">-- Select Invoice --</option>
+      </select>
+      <button onclick="loadSelectedInvoice()" style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Load</button>
+      <button onclick="toggleLoadInvoice()" style="background-color: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Cancel</button>
+    </div>
+    <div id="load-invoice-status" style="margin-top: 10px;"></div>
+  </div>
+</div>
+
 <div class="invoice-box" id="invoice">
   <h1 class="center">GST INVOICE</h1>
   <div class="flex-space">
@@ -114,6 +132,7 @@
       <th class="sgst">SGST</th>
       <th class="igst">IGST</th>
       <th>Total</th>
+      <th class="pdf-hide">Action</th>
     </tr>
     </thead>
     <tbody id="item-body"></tbody>
@@ -133,7 +152,7 @@
           <input type="number" id="discount-value" value="0" min="0" step="0.01" onchange="recalculate()" style="width: 80px; padding: 3px;" class="pdf-hide">
           <select id="discount-type" onchange="recalculate()" style="width: 60px; padding: 3px;" class="pdf-hide">
             <option value="fixed">₹</option>
-            <option value="percent">%</option>
+            <option value="percent" selected>%</option>
           </select>
           <span id="discount-display-pdf" style="display: none;">(<span id="discount-type-text"></span>)</span>
           <span style="margin-left: 0px;">₹<span id="discount-amount">0.00</span></span>

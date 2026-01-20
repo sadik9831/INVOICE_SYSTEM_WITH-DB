@@ -5,6 +5,10 @@ const API_BASE_URL = 'http://localhost/invoice-system';
 let originalDate = '';
 let isDateEditing = false;
 
+// Track if we're editing an existing invoice
+let isEditingMode = false;
+let currentEditInvoiceNo = null;
+
 // Function to fetch invoice data from the server
 async function fetchInvoiceData() {
   const invoiceNoStatus = document.getElementById('invoice-no-status');
@@ -192,6 +196,7 @@ function addItem() {
   <td class="sgst">0.00</td>
   <td class="igst">0.00</td>
   <td><input type="number" class="total-input" value="0.00" min="0" step="0.01" onchange="recalculate(this)" /></td>
+  <td class="pdf-hide"><button onclick="deleteItem(this)" class="delete-btn">Delete</button></td>
 `;
   tbody.appendChild(row);
   updateSerialNumbers();
@@ -446,13 +451,15 @@ function generatePDF() {
     const rows = document.querySelectorAll('#item-body tr');
     rows.forEach(row => {
       const itemName = row.children[1].children[0].value;
+      const gstRateText = row.children[2].textContent.trim(); // Get GST rate text like "18%"
+      const gstRate = parseFloat(gstRateText.replace('%', '')) || 18; // Remove % and parse
       const qty = parseFloat(row.children[3].children[0].value) || 1;
       const rate = parseFloat(row.children[4].children[0].value) || 0;
       const total = parseFloat(row.children[9].children[0].value) || 0;
       if (itemName.trim()) {
         items.push({
           name: itemName,
-          gst_rate: 18,
+          gst_rate: gstRate,
           qty: qty,
           rate: rate,
           amount: qty * rate,
@@ -489,14 +496,32 @@ function generatePDF() {
     const reader = new FileReader();
     reader.onloadend = function() {
       invoiceData.pdf_base64 = reader.result.split(',')[1];
-      fetch(`${API_BASE_URL}/insert_invoice.php`, {
+      
+      // Determine whether to insert or update
+      const endpoint = isEditingMode ? 'update_invoice.php' : 'insert_invoice.php';
+      const action = isEditingMode ? 'updated' : 'saved';
+      
+      // Debug logging
+      console.log('=== SAVING INVOICE ===');
+      console.log('Edit Mode:', isEditingMode);
+      console.log('Endpoint:', endpoint);
+      console.log('Invoice No:', invoiceData.invoice_no);
+      console.log('Invoice Data:', invoiceData);
+      
+      fetch(`${API_BASE_URL}/${endpoint}`, {
         method: "POST",
         body: JSON.stringify(invoiceData),
         headers: { "Content-Type": "application/json" }
       })
-      .then(res => res.json())
+      .then(res => {
+        console.log('Response status:', res.status);
+        return res.json();
+      })
       .then(data => {
-        console.log("✅ Invoice saved successfully:", data);
+        console.log(`✅ Invoice ${action} response:`, data);
+        if (!data.success) {
+          throw new Error(data.error || 'Unknown error occurred');
+        }
         const url = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -505,12 +530,22 @@ function generatePDF() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        alert("Invoice saved and PDF downloaded successfully!");
-        setTimeout(() => refreshInvoiceData(), 1000);
+        alert(`Invoice ${action} and PDF downloaded successfully!`);
+        
+        // If it was an update, ask if user wants to create a new invoice
+        if (isEditingMode) {
+          setTimeout(() => {
+            if (confirm('Invoice updated! Do you want to create a new invoice?')) {
+              resetToNewInvoice();
+            }
+          }, 500);
+        } else {
+          setTimeout(() => refreshInvoiceData(), 1000);
+        }
       })
       .catch(err => {
         console.error("❌ Save Error:", err);
-        alert("Failed to save invoice. PDF will still download.");
+        alert("Failed to save invoice: " + err.message);
         const url = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = url;
@@ -822,6 +857,7 @@ window.onload = async function() {
     // Load initial data in the correct order
     await fetchInvoiceData(); // This was missing!
     await loadCustomers();
+    await loadInvoiceNumbers(); // Load invoice numbers for dropdown
     updateTaxColumns();
 
     // Add event listeners
@@ -843,4 +879,187 @@ window.onload = async function() {
     console.error('Error during initialization:', error);
   }
 };
+
+// Toggle load invoice section
+function toggleLoadInvoice() {
+  const section = document.getElementById('load-invoice-section');
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    loadInvoiceNumbers(); // Refresh the list when opening
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// Load all invoice numbers
+async function loadInvoiceNumbers() {
+  const dropdown = document.getElementById('old-invoice-dropdown');
+  const status = document.getElementById('load-invoice-status');
+  
+  try {
+    status.textContent = 'Loading invoices...';
+    status.className = 'loading';
+    
+    const response = await fetch(`${API_BASE_URL}/get_invoice.php?action=get_all_numbers`);
+    const data = await response.json();
+    
+    if (data.success) {
+      dropdown.innerHTML = '<option value="">-- Select Invoice --</option>';
+      
+      data.invoices.forEach(inv => {
+        const option = document.createElement('option');
+        option.value = inv.invoice_no;
+        option.textContent = `Invoice #${inv.invoice_no} - ${inv.customer_name} (${inv.invoice_date})`;
+        dropdown.appendChild(option);
+      });
+      
+      status.textContent = `${data.invoices.length} invoices loaded`;
+      status.className = 'success';
+      setTimeout(() => status.textContent = '', 3000);
+    } else {
+      throw new Error(data.error);
+    }
+  } catch (error) {
+    console.error('Error loading invoice numbers:', error);
+    status.textContent = 'Error loading invoices';
+    status.className = 'error';
+  }
+}
+
+// Load selected invoice
+async function loadSelectedInvoice() {
+  const dropdown = document.getElementById('old-invoice-dropdown');
+  const status = document.getElementById('load-invoice-status');
+  const invoiceNo = dropdown.value;
+  
+  if (!invoiceNo) {
+    alert('Please select an invoice');
+    return;
+  }
+  
+  try {
+    status.textContent = 'Loading invoice data...';
+    status.className = 'loading';
+    
+    const response = await fetch(`${API_BASE_URL}/get_invoice.php?action=get_by_number&invoice_no=${invoiceNo}`);
+    const data = await response.json();
+    
+    if (data.success) {
+      // Set editing mode
+      isEditingMode = true;
+      currentEditInvoiceNo = invoiceNo;
+      
+      // Load invoice header data
+      const invoice = data.invoice;
+      document.getElementById('invoice-no').value = invoice.invoice_no;
+      document.getElementById('invoice-no').readOnly = true; // Make invoice number read-only
+      
+      // Set date
+      setInvoiceDate(invoice.invoice_date);
+      
+      // Load customer data
+      const customerDropdown = document.getElementById('customer-dropdown');
+      const customerName = invoice.customer_name || '';
+      
+      if (customerName) {
+        // Check if customer exists in dropdown
+        const customerExists = Array.from(customerDropdown.options).some(opt => opt.value === customerName);
+        if (customerExists) {
+          customerDropdown.value = customerName;
+        } else {
+          customerDropdown.value = 'new';
+          document.getElementById('customer-name').style.display = 'block';
+          document.getElementById('customer-name').value = customerName;
+        }
+      }
+      
+      // Load customer details
+      if (data.customer) {
+        document.getElementById('customer-address1').value = data.customer.address_line1 || '';
+        document.getElementById('customer-address2').value = data.customer.address_line2 || '';
+        document.getElementById('customer-address3').value = data.customer.address_line3 || '';
+        document.getElementById('customer-gstin').value = data.customer.gstin || '';
+      } else {
+        document.getElementById('customer-gstin').value = invoice.customer_gstin || '';
+      }
+      
+      // Load discount
+      document.getElementById('discount-type').value = invoice.discount_type || 'fixed';
+      document.getElementById('discount-value').value = invoice.discount_value || 0;
+      
+      // Clear existing items
+      const tbody = document.getElementById('item-body');
+      tbody.innerHTML = '';
+      
+      // Load invoice items
+      data.items.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="sno">${item.s_no}</td>
+          <td><input type="text" value="${item.item_name}" onchange="recalculate(this)" /></td>
+          <td>${item.gst_rate}%</td>
+          <td><input type="number" value="${item.quantity}" onchange="recalculate(this)" /></td>
+          <td><input type="number" value="${item.rate}" onchange="recalculate(this)" /></td>
+          <td class="amount">${item.amount}</td>
+          <td class="cgst">${item.cgst}</td>
+          <td class="sgst">${item.sgst}</td>
+          <td class="igst">${item.igst}</td>
+          <td><input type="number" class="total-input" value="${item.total}" min="0" step="0.01" onchange="recalculate(this)" /></td>
+          <td class="pdf-hide"><button onclick="deleteItem(this)" class="delete-btn">Delete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+      
+      // Recalculate totals
+      updateSerialNumbers();
+      recalculate();
+      updateTaxColumns();
+      
+      // Hide load section and show success message
+      toggleLoadInvoice();
+      alert(`Invoice #${invoiceNo} loaded successfully! You can now edit and save it.`);
+      
+      // Change invoice number status
+      const invoiceNoStatus = document.getElementById('invoice-no-status');
+      invoiceNoStatus.textContent = 'Editing existing invoice';
+      invoiceNoStatus.className = 'warning';
+      invoiceNoStatus.style.display = 'block';
+      
+    } else {
+      throw new Error(data.error);
+    }
+  } catch (error) {
+    console.error('Error loading invoice:', error);
+    status.textContent = 'Error: ' + error.message;
+    status.className = 'error';
+    alert('Failed to load invoice: ' + error.message);
+  }
+}
+
+// Clear form and reset to new invoice mode
+function resetToNewInvoice() {
+  isEditingMode = false;
+  currentEditInvoiceNo = null;
+  document.getElementById('invoice-no').readOnly = false;
+  fetchInvoiceData();
+  
+  // Clear customer
+  document.getElementById('customer-dropdown').value = '';
+  document.getElementById('customer-name').value = '';
+  document.getElementById('customer-address1').value = '';
+  document.getElementById('customer-address2').value = '';
+  document.getElementById('customer-address3').value = '';
+  document.getElementById('customer-gstin').value = '';
+  
+  // Clear items
+  document.getElementById('item-body').innerHTML = '';
+  addItem();
+  
+  // Reset discount
+  document.getElementById('discount-type').value = 'percent';
+  document.getElementById('discount-value').value = 0;
+  
+  recalculate();
+}
+
 
