@@ -142,7 +142,7 @@ body {
   .invoice-table td:nth-child(8),
   .invoice-table td:nth-child(9),
   .invoice-table td:nth-child(10) {
-    text-align: right;
+    text-align: center;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
