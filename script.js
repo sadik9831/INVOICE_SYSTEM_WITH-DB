@@ -365,6 +365,12 @@ function generatePDF() {
   const elementsToHide = invoiceBox.querySelectorAll('.edit-icon, .date-actions, button, [class*="edit"], .pdf-hide');
   elementsToHide.forEach(el => el.style.display = 'none');
   
+  // Explicitly hide status messages
+  const invoiceNoStatus = document.getElementById('invoice-no-status');
+  const invoiceDateStatus = document.getElementById('invoice-date-status');
+  if (invoiceNoStatus) invoiceNoStatus.style.display = 'none';
+  if (invoiceDateStatus) invoiceDateStatus.style.display = 'none';
+  
   // Show discount display for PDF
   const discountDisplayPdf = document.getElementById('discount-display-pdf');
   if (discountDisplayPdf && parseFloat(document.getElementById('discount-value').value) > 0) {
@@ -997,7 +1003,7 @@ async function loadSelectedInvoice() {
         row.innerHTML = `
           <td class="sno">${item.s_no}</td>
           <td><input type="text" value="${item.item_name}" onchange="recalculate(this)" /></td>
-          <td>${item.gst_rate}%</td>
+          <td>${parseInt(item.gst_rate)}%</td>
           <td><input type="number" value="${item.quantity}" onchange="recalculate(this)" /></td>
           <td><input type="number" value="${item.rate}" onchange="recalculate(this)" /></td>
           <td class="amount">${item.amount}</td>

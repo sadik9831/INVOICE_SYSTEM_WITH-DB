@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>GST INVOICE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -38,7 +40,7 @@
   <div>
     <strong>INVOICE NO</strong><br>
     <input type="text" id="invoice-no" value="" placeholder="Loading...">
-    <div id="invoice-no-status" class="loading">Loading invoice number...</div>
+    <div id="invoice-no-status" class="loading pdf-hide">Loading invoice number...</div>
   </div>
   <div class="date-container">
     <strong>INVOICE DATE</strong><br>

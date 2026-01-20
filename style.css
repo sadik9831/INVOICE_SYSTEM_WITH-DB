@@ -555,6 +555,11 @@ body {
     .edit-icon, .date-actions {
       display: none !important;
     }
+    
+    .pdf-hide {
+      display: none !important;
+      visibility: hidden !important;
+    }
   }
 
   /* PDF export specific styles */
@@ -598,6 +603,12 @@ body {
   .pdf-exporting .action-buttons,
   .pdf-exporting #discount-value,
   .pdf-exporting #discount-type {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+  
+  .pdf-exporting .pdf-hide {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
