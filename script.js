@@ -1,5 +1,5 @@
-// Configuration - Change this to match your PHP server URL
-const API_BASE_URL = 'http://localhost/invoice-system';
+// Configuration - Auto-detect the base URL based on current hostname
+const API_BASE_URL = window.location.origin + '/invoice-system';
 
 // Store original date for cancel functionality
 let originalDate = '';
@@ -196,7 +196,7 @@ function addItem() {
   <td class="sgst">0.00</td>
   <td class="igst">0.00</td>
   <td><input type="number" class="total-input" value="0.00" min="0" step="0.01" onchange="recalculate(this)" /></td>
-  <td class="pdf-hide"><button onclick="deleteItem(this)" class="delete-btn">Delete</button></td>
+  <td class="pdf-hide"><button onclick="deleteItem(this)" class="delete-btn">×</button></td>
 `;
   tbody.appendChild(row);
   updateSerialNumbers();
@@ -1011,7 +1011,7 @@ async function loadSelectedInvoice() {
           <td class="sgst">${item.sgst}</td>
           <td class="igst">${item.igst}</td>
           <td><input type="number" class="total-input" value="${item.total}" min="0" step="0.01" onchange="recalculate(this)" /></td>
-          <td class="pdf-hide"><button onclick="deleteItem(this)" class="delete-btn">Delete</button></td>
+          <td class="pdf-hide"><button onclick="deleteItem(this)" class="delete-btn">×</button></td>
         `;
         tbody.appendChild(row);
       });
