@@ -31,20 +31,22 @@ if (!$data) {
 try {
     $pdo->beginTransaction();
     
-    // Insert into invoices table
-    $stmt = $pdo->prepare("INSERT INTO invoices (invoice_no, invoice_date, customer_name, customer_gstin, amount_before_tax, discount_type, discount_value, discount_amount, amount_after_discount, total_tax, total_after_tax) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Insert into invoices table with summary fields
+    $stmt = $pdo->prepare("INSERT INTO invoices (invoice_no, invoice_date, customer_name, customer_gstin, customer_address1, customer_address2, amount_before_tax, discount_type, discount_value, discount_amount, amount_after_discount, total_tax, total_after_tax) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
         $data['invoice_no'],
         $data['invoice_date'],
         $data['customer_name'],
         $data['customer_gstin'],
-        $data['amount_before_tax'],
+        $data['customer_address1'] ?? '',
+        $data['customer_address2'] ?? '',
+        $data['amount_before_tax'] ?? 0,
         $data['discount_type'] ?? 'fixed',
         $data['discount_value'] ?? 0,
         $data['discount_amount'] ?? 0,
-        $data['amount_after_discount'] ?? $data['amount_before_tax'],
-        $data['total_tax'],
-        $data['total_after_tax']
+        $data['amount_after_discount'] ?? $data['amount_before_tax'] ?? 0,
+        $data['total_tax'] ?? 0,
+        $data['total_after_tax'] ?? 0
     ]);
     
     $invoice_id = $pdo->lastInsertId();
@@ -69,14 +71,13 @@ try {
         }
     }
     
-    // Insert invoice items with invoice_id, invoice_no and serial number (s_no)
-    $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_id, invoice_no, s_no, item_name, gst_rate, quantity, rate, amount, cgst, sgst, igst, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Insert invoice items with invoice_no and serial number (s_no) - InfinityFree compatible
+    $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_no, s_no, item_name, gst_rate, quantity, rate, amount, cgst, sgst, igst, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
     $s_no = 1; // Initialize serial number
     foreach ($data['items'] as $item) {
         $stmt_item->execute([
-            $invoice_id,              // Invoice ID (foreign key)
-            $data['invoice_no'],      // Invoice number
+            $data['invoice_no'],      // Invoice number (link to invoice)
             $s_no,                    // Serial number
             $item['name'],
             $item['gst_rate'],

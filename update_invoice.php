@@ -39,30 +39,30 @@ if (empty($data['invoice_no'])) {
 try {
     $pdo->beginTransaction();
     
-    // Update or insert customer data if provided
+    // Update or insert customer data if provided (InfinityFree compatible)
     if (!empty($data['customer_name'])) {
-        $stmt_customer = $pdo->prepare("INSERT INTO customers (customer_name, address_line1, address_line2, address_line3, gstin) 
-            VALUES (?, ?, ?, ?, ?) 
+        $stmt_customer = $pdo->prepare("INSERT INTO customers (customer_name, customer_address1, customer_address2, customer_gstin) 
+            VALUES (?, ?, ?, ?) 
             ON DUPLICATE KEY UPDATE 
-                address_line1 = VALUES(address_line1), 
-                address_line2 = VALUES(address_line2), 
-                address_line3 = VALUES(address_line3), 
-                gstin = VALUES(gstin)");
+                customer_address1 = VALUES(customer_address1), 
+                customer_address2 = VALUES(customer_address2), 
+                customer_gstin = VALUES(customer_gstin)");
         
         $stmt_customer->execute([
             $data['customer_name'],
             $data['customer_address1'] ?? '',
             $data['customer_address2'] ?? '',
-            $data['customer_address3'] ?? '',
             $data['customer_gstin'] ?? ''
         ]);
     }
     
-    // Update invoices table
+    // Update invoices table with summary fields
     $stmt = $pdo->prepare("UPDATE invoices SET 
         invoice_date = ?, 
         customer_name = ?, 
         customer_gstin = ?, 
+        customer_address1 = ?, 
+        customer_address2 = ?, 
         amount_before_tax = ?, 
         discount_type = ?, 
         discount_value = ?, 
@@ -76,13 +76,15 @@ try {
         $data['invoice_date'],
         $data['customer_name'],
         $data['customer_gstin'],
-        $data['amount_before_tax'],
+        $data['customer_address1'] ?? '',
+        $data['customer_address2'] ?? '',
+        $data['amount_before_tax'] ?? 0,
         $data['discount_type'] ?? 'fixed',
         $data['discount_value'] ?? 0,
         $data['discount_amount'] ?? 0,
-        $data['amount_after_discount'] ?? $data['amount_before_tax'],
-        $data['total_tax'],
-        $data['total_after_tax'],
+        $data['amount_after_discount'] ?? $data['amount_before_tax'] ?? 0,
+        $data['total_tax'] ?? 0,
+        $data['total_after_tax'] ?? 0,
         $data['invoice_no']
     ]);
     
@@ -105,37 +107,13 @@ try {
     $stmt_delete->execute([$data['invoice_no']]);
     error_log("UPDATE INVOICE - Deleted old items, rows affected: " . $stmt_delete->rowCount());
     
-    // Get invoice_id for the items - try common primary key column names
-    $stmt_id = $pdo->prepare("SELECT * FROM invoices WHERE invoice_no = ?");
-    $stmt_id->execute([$data['invoice_no']]);
-    $invoice = $stmt_id->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$invoice) {
-        throw new Exception("Invoice #{$data['invoice_no']} not found after update");
-    }
-    
-    // Try to find the primary key - check common names
-    $invoice_id = null;
-    if (isset($invoice['id'])) {
-        $invoice_id = $invoice['id'];
-    } elseif (isset($invoice['invoice_id'])) {
-        $invoice_id = $invoice['invoice_id'];
-    } elseif (isset($invoice['InvoiceID'])) {
-        $invoice_id = $invoice['InvoiceID'];
-    } else {
-        // If no ID found, log all column names for debugging
-        error_log("UPDATE INVOICE - Available columns: " . implode(', ', array_keys($invoice)));
-        throw new Exception("Could not find primary key column in invoices table. Available columns: " . implode(', ', array_keys($invoice)));
-    }
-    
-    // Insert updated items
-    $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_id, invoice_no, s_no, item_name, gst_rate, quantity, rate, amount, cgst, sgst, igst, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Insert updated items (InfinityFree compatible - no invoice_id)
+    $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_no, s_no, item_name, gst_rate, quantity, rate, amount, cgst, sgst, igst, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
     $s_no = 1;
     $itemsInserted = 0;
     foreach ($data['items'] as $item) {
         $stmt_item->execute([
-            $invoice_id,
             $data['invoice_no'],
             $s_no,
             $item['name'],

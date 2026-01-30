@@ -1,5 +1,9 @@
-// Configuration - Auto-detect the base URL based on current hostname
-const API_BASE_URL = window.location.origin + '/invoice-system';
+// Configuration - Auto-detect the base URL based on current location
+// Works for both local (with /invoice-system/) and InfinityFree (without subfolder)
+const currentPath = window.location.pathname;
+const API_BASE_URL = currentPath.includes('/invoice-system/') 
+  ? window.location.origin + '/invoice-system'
+  : window.location.origin;
 
 // Store original date for cancel functionality
 let originalDate = '';
@@ -764,18 +768,24 @@ function fillCustomerData(customerName) {
   const customer = customers.find(c => c.customer_name == customerName);
   
   if (customer) {
-    // Set form values
-    document.getElementById('customer-address1').value = customer.address_line1 || '';
-    document.getElementById('customer-address2').value = customer.address_line2 || '';
-    document.getElementById('customer-address3').value = customer.address_line3 || '';
-    document.getElementById('customer-gstin').value = customer.gstin || '';
+    // Set form values - handle both column name formats
+    document.getElementById('customer-address1').value = customer.customer_address1 || customer.address_line1 || '';
+    document.getElementById('customer-address2').value = customer.customer_address2 || customer.address_line2 || '';
+    document.getElementById('customer-address3').value = customer.customer_address3 || customer.address_line3 || '';
+    document.getElementById('customer-gstin').value = customer.customer_gstin || customer.gstin || '';
     
-    // Set display values for PDF
+    // Set display values for PDF (with safety checks)
     const nameDisplay = document.getElementById('customer-name-display');
     if (nameDisplay) nameDisplay.textContent = customer.customer_name || '';
-    document.getElementById('address1-display').textContent = customer.address_line1 || '';
-    document.getElementById('address2-display').textContent = customer.address_line2 || '';
-    document.getElementById('address3-display').textContent = customer.address_line3 || '';
+    
+    const address1Display = document.getElementById('address1-display');
+    if (address1Display) address1Display.textContent = customer.customer_address1 || customer.address_line1 || '';
+    
+    const address2Display = document.getElementById('address2-display');
+    if (address2Display) address2Display.textContent = customer.customer_address2 || customer.address_line2 || '';
+    
+    const address3Display = document.getElementById('address3-display');
+    if (address3Display) address3Display.textContent = customer.customer_address3 || customer.address_line3 || '';
     
     // Trigger recalculation for tax changes
     recalculate();
@@ -979,12 +989,12 @@ async function loadSelectedInvoice() {
         }
       }
       
-      // Load customer details
+      // Load customer details (handle both column name formats)
       if (data.customer) {
-        document.getElementById('customer-address1').value = data.customer.address_line1 || '';
-        document.getElementById('customer-address2').value = data.customer.address_line2 || '';
-        document.getElementById('customer-address3').value = data.customer.address_line3 || '';
-        document.getElementById('customer-gstin').value = data.customer.gstin || '';
+        document.getElementById('customer-address1').value = data.customer.address_line1 || data.customer.customer_address1 || '';
+        document.getElementById('customer-address2').value = data.customer.address_line2 || data.customer.customer_address2 || '';
+        document.getElementById('customer-address3').value = data.customer.address_line3 || data.customer.customer_address3 || '';
+        document.getElementById('customer-gstin').value = data.customer.gstin || data.customer.customer_gstin || '';
       } else {
         document.getElementById('customer-gstin').value = invoice.customer_gstin || '';
       }
