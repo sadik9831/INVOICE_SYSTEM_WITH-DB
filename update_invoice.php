@@ -39,22 +39,8 @@ if (empty($data['invoice_no'])) {
 try {
     $pdo->beginTransaction();
     
-    // Update or insert customer data if provided (InfinityFree compatible)
-    if (!empty($data['customer_name'])) {
-        $stmt_customer = $pdo->prepare("INSERT INTO customers (customer_name, customer_address1, customer_address2, customer_gstin) 
-            VALUES (?, ?, ?, ?) 
-            ON DUPLICATE KEY UPDATE 
-                customer_address1 = VALUES(customer_address1), 
-                customer_address2 = VALUES(customer_address2), 
-                customer_gstin = VALUES(customer_gstin)");
-        
-        $stmt_customer->execute([
-            $data['customer_name'],
-            $data['customer_address1'] ?? '',
-            $data['customer_address2'] ?? '',
-            $data['customer_gstin'] ?? ''
-        ]);
-    }
+    // Customer data is stored in invoices table, no need to duplicate in customers table on update
+    // This prevents customer detail duplication issues
     
     // Update invoices table with summary fields
     $stmt = $pdo->prepare("UPDATE invoices SET 

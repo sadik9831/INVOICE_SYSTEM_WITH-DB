@@ -607,25 +607,6 @@ function syncBilledToDisplay(forPdf = false) {
   if (d3) d3.textContent = a3;
 }
 
-// Initialize the page
-window.onload = function() {
-  fetchInvoiceData(); // Fetch invoice number and date from server
-  updateTaxColumns();
-
-  // Add event listeners
-  document.getElementById('customer-gstin').addEventListener('input', function() {
-    recalculate();
-    updateTaxColumns();
-  });
-
-  // Add event listeners for form inputs
-  document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('change', function() {
-      // You can add any additional change handlers here if needed
-    });
-  });
-};
-
 function getStateCode(gst) {
   return gst && gst.length >= 2 ? gst.substring(0, 2) : null;
 }
@@ -710,7 +691,19 @@ async function loadCustomers() {
     const data = await response.json();
     
     if (data.success) {
-      customers = data.customers;
+      const rawCustomers = Array.isArray(data.customers) ? data.customers : [];
+
+      // De-duplicate by customer name to avoid repeated options when DB has legacy duplicates.
+      const uniqueByName = new Map();
+      rawCustomers.forEach(customer => {
+        const name = (customer.customer_name || '').trim();
+        if (!name) return;
+        const key = name.toLowerCase();
+        if (!uniqueByName.has(key)) {
+          uniqueByName.set(key, customer);
+        }
+      });
+      customers = Array.from(uniqueByName.values());
       
       // Clear existing options except default ones
       customerDropdown.innerHTML = `
@@ -809,6 +802,13 @@ function clearCustomerFields() {
 
 // Save current customer data
 async function saveCurrentCustomer() {
+  // Never save customer details when editing an existing invoice
+  // Customer data is stored in the invoices table, not in customers table
+  if (isEditingMode) {
+    alert('Cannot save customer details while editing an invoice. Customer information is stored with the invoice.');
+    return;
+  }
+  
   const dropdown = document.getElementById('customer-dropdown');
   const nameInput = document.getElementById('customer-name');
   
@@ -999,6 +999,12 @@ async function loadSelectedInvoice() {
         document.getElementById('customer-gstin').value = invoice.customer_gstin || '';
       }
       
+      // Make customer fields read-only when editing to prevent accidental modifications
+      document.getElementById('customer-address1').readOnly = true;
+      document.getElementById('customer-address2').readOnly = true;
+      document.getElementById('customer-address3').readOnly = true;
+      document.getElementById('customer-gstin').readOnly = true;
+      
       // Load discount
       document.getElementById('discount-type').value = invoice.discount_type || 'fixed';
       document.getElementById('discount-value').value = invoice.discount_value || 0;
@@ -1035,6 +1041,14 @@ async function loadSelectedInvoice() {
       toggleLoadInvoice();
       alert(`Invoice #${invoiceNo} loaded successfully! You can now edit and save it.`);
       
+      // Disable "Save Customer" button when in edit mode
+      const saveCustomerBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Save Customer');
+      if (saveCustomerBtn) {
+        saveCustomerBtn.disabled = true;
+        saveCustomerBtn.style.opacity = '0.5';
+        saveCustomerBtn.title = 'Cannot save customer details while editing an invoice. Customer information is stored with the invoice.';
+      }
+      
       // Change invoice number status
       const invoiceNoStatus = document.getElementById('invoice-no-status');
       invoiceNoStatus.textContent = 'Editing existing invoice';
@@ -1058,6 +1072,20 @@ function resetToNewInvoice() {
   currentEditInvoiceNo = null;
   document.getElementById('invoice-no').readOnly = false;
   fetchInvoiceData();
+  
+  // Re-enable "Save Customer" button when creating new invoice
+  const saveCustomerBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.trim() === 'Save Customer');
+  if (saveCustomerBtn) {
+    saveCustomerBtn.disabled = false;
+    saveCustomerBtn.style.opacity = '1';
+    saveCustomerBtn.title = 'Save customer details for future invoices';
+  }
+  
+  // Make customer fields editable again
+  document.getElementById('customer-address1').readOnly = false;
+  document.getElementById('customer-address2').readOnly = false;
+  document.getElementById('customer-address3').readOnly = false;
+  document.getElementById('customer-gstin').readOnly = false;
   
   // Clear customer
   document.getElementById('customer-dropdown').value = '';
